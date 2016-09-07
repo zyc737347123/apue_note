@@ -1,0 +1,82 @@
+#include<apue.h>
+#include<errno.h>
+#include<limits.h>
+#include<sys/resource.h>
+
+#define OPEN_MAX_GUESS 256 
+
+struct bucket_desc
+{	/* 16 bytes */
+	  void *page;	// 该桶描述符对应的内存页面指针。
+	  struct bucket_desc *next;	// 下一个描述符指针。
+      void *freeptr;	// 指向本桶中空闲内存位置的指针。
+	  unsigned short refcnt;	// 引用计数。
+	  unsigned short bucket_size;	// 本描述符对应存储桶的大小。
+};
+
+clock_t get_time();
+
+long open_max(void);
+
+int main(void)
+{
+	struct bucket_desc a;
+	//struct _bucket_dir *bdir;
+	/*
+	printf("void* %ld\n",sizeof(void*));
+	printf("un short %ld\n",sizeof(unsigned short));
+	printf("%ld\n",sizeof(struct bucket_desc*));
+	printf("size %ld\n",sizeof(a));
+	
+	char b='a';
+	char *ptr=&b;
+	printf("long %ld\n",sizeof(long));
+	printf("int %ld\n",sizeof(int));
+	printf("long long %ld\n",sizeof(long long));
+	printf("*ptr %s\n",ptr);
+	printf("*(char **)ptr %ld\n",(long)*((char **)ptr));
+	*/
+	get_time();
+	printf("opne file max %ld\n",open_max());
+	return 1;
+}
+
+clock_t get_time()
+{
+	printf("clock_t ");
+	long val;
+	errno=0;
+	if((val=sysconf(_SC_CLK_TCK))<0)
+	{
+		
+		if(errno!=0){
+			if(errno==EINVAL)
+			fputs(" (no supported\n",stdout);
+			else
+			err_sys("sysconf error");
+		}else{
+			fputs(" (no limit)\n",stdout);
+		}
+	}else{
+		printf(" %ld\n",val);
+	}
+	return val;
+
+}
+
+long open_max(void)
+{
+	long openmax;
+	struct rlimit rl;
+	
+	if((openmax=sysconf(_SC_OPEN_MAX))<0||openmax==LONG_MAX){
+		if(getrlimit(RLIMIT_NOFILE,&rl)<0)
+			err_sys("can't get file limit");
+		if(rl.rlim_max==RLIM_INFINITY)
+			openmax=OPEN_MAX_GUESS;
+		else
+			openmax=rl.rlim_max;
+	}
+
+	return openmax;
+}
