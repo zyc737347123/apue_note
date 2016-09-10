@@ -1,0 +1,24 @@
+#define	__S_ISTYPE(mode, mask)	(((mode) & __S_IFMT) == (mask))
+
+#define	S_ISDIR(mode)	 __S_ISTYPE((mode), __S_IFDIR)
+#define	S_ISCHR(mode)	 __S_ISTYPE((mode), __S_IFCHR)
+#define	S_ISBLK(mode)	 __S_ISTYPE((mode), __S_IFBLK)
+#define	S_ISREG(mode)	 __S_ISTYPE((mode), __S_IFREG)
+#ifdef __S_IFIFO
+# define S_ISFIFO(mode)	 __S_ISTYPE((mode), __S_IFIFO)
+#endif
+#ifdef __S_IFLNK
+# define S_ISLNK(mode)	 __S_ISTYPE((mode), __S_IFLNK)
+#endif
+
+设置用于ID位：	前提，程序文件任意用户可执行(即 other可执行)
+				在st_mode中有两个位，set_user_id 和 set_group_id
+				如果设置了这俩个位，那么在进程运行时，有效用户id就是文件拥有者id
+				就是说，一个普通用户运行一个文件所有者为root的程序文件就可以获得变相获得root权限
+				检测宏：S_ISUID , S_ISGID（在sd_mode中）
+
+SUID位对应用户执行位：	-rwxr-xr-x 1 root root 13708  9��  7 16:12 a.out
+			$:chmod u+s
+			-rwsrwxr-x 1 root gen 13588  9�� 10 10:25 mycreat
+			此时，如果other有执行权限，那么这个程序运行时就是一个超级用户权限程序，而且任意用户可以运行（危险！）
+			
