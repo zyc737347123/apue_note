@@ -1,0 +1,1 @@
+cmd_/home/gen/apue/test/timer/timer_list.ko := ld -r -m elf_x86_64 -T /usr/src/linux-headers-3.13.0-93-generic/scripts/module-common.lds --build-id  -o /home/gen/apue/test/timer/timer_list.ko /home/gen/apue/test/timer/timer_list.o /home/gen/apue/test/timer/timer_list.mod.o

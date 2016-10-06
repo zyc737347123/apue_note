@@ -5,6 +5,10 @@
 #define r R_OK
 #define x X_OK
 
+/**
+ * access用来测试进程实际用户ID的访问权限
+ */
+
 int myaccess(const char* pathname,int mode);
 
 int main(int argc,char *argv[])

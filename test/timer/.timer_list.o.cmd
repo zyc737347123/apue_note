@@ -1,23 +1,15 @@
-cmd_/home/gen/apue/test/modules/mycurrent.o := gcc -Wp,-MD,/home/gen/apue/test/modules/.mycurrent.o.d  -nostdinc -isystem /usr/lib/gcc/x86_64-linux-gnu/4.8/include  -I/usr/src/linux-headers-3.13.0-93-generic/arch/x86/include -Iarch/x86/include/generated  -Iinclude -I/usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/uapi -Iarch/x86/include/generated/uapi -I/usr/src/linux-headers-3.13.0-93-generic/include/uapi -Iinclude/generated/uapi -include /usr/src/linux-headers-3.13.0-93-generic/include/linux/kconfig.h -Iubuntu/include  -D__KERNEL__ -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -fno-delete-null-pointer-checks -std=gnu89 -O2 -m64 -mno-mmx -mno-sse -mpreferred-stack-boundary=3 -mtune=generic -mno-red-zone -mcmodel=kernel -funit-at-a-time -maccumulate-outgoing-args -DCONFIG_X86_X32_ABI -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_FXSAVEQ=1 -DCONFIG_AS_AVX=1 -DCONFIG_AS_AVX2=1 -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -Wframe-larger-than=1024 -fstack-protector -Wno-unused-but-set-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-var-tracking-assignments -pg -mfentry -DCC_USING_FENTRY -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -Werror=implicit-int -Werror=strict-prototypes -DCC_HAVE_ASM_GOTO  -DMODULE  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(mycurrent)"  -D"KBUILD_MODNAME=KBUILD_STR(mycurrent)" -c -o /home/gen/apue/test/modules/.tmp_mycurrent.o /home/gen/apue/test/modules/mycurrent.c
+cmd_/home/gen/apue/test/timer/timer_list.o := gcc -Wp,-MD,/home/gen/apue/test/timer/.timer_list.o.d  -nostdinc -isystem /usr/lib/gcc/x86_64-linux-gnu/4.8/include  -I/usr/src/linux-headers-3.13.0-93-generic/arch/x86/include -Iarch/x86/include/generated  -Iinclude -I/usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/uapi -Iarch/x86/include/generated/uapi -I/usr/src/linux-headers-3.13.0-93-generic/include/uapi -Iinclude/generated/uapi -include /usr/src/linux-headers-3.13.0-93-generic/include/linux/kconfig.h -Iubuntu/include  -D__KERNEL__ -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -fno-delete-null-pointer-checks -std=gnu89 -O2 -m64 -mno-mmx -mno-sse -mpreferred-stack-boundary=3 -mtune=generic -mno-red-zone -mcmodel=kernel -funit-at-a-time -maccumulate-outgoing-args -DCONFIG_X86_X32_ABI -DCONFIG_AS_CFI=1 -DCONFIG_AS_CFI_SIGNAL_FRAME=1 -DCONFIG_AS_CFI_SECTIONS=1 -DCONFIG_AS_FXSAVEQ=1 -DCONFIG_AS_AVX=1 -DCONFIG_AS_AVX2=1 -pipe -Wno-sign-compare -fno-asynchronous-unwind-tables -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -Wframe-larger-than=1024 -fstack-protector -Wno-unused-but-set-variable -fno-omit-frame-pointer -fno-optimize-sibling-calls -fno-var-tracking-assignments -pg -mfentry -DCC_USING_FENTRY -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack -Werror=implicit-int -Werror=strict-prototypes -DCC_HAVE_ASM_GOTO  -DMODULE  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(timer_list)"  -D"KBUILD_MODNAME=KBUILD_STR(timer_list)" -c -o /home/gen/apue/test/timer/.tmp_timer_list.o /home/gen/apue/test/timer/timer_list.c
 
-source_/home/gen/apue/test/modules/mycurrent.o := /home/gen/apue/test/modules/mycurrent.c
+source_/home/gen/apue/test/timer/timer_list.o := /home/gen/apue/test/timer/timer_list.c
 
-deps_/home/gen/apue/test/modules/mycurrent.o := \
-  include/linux/init.h \
-    $(wildcard include/config/broken/rodata.h) \
-    $(wildcard include/config/modules.h) \
-  include/linux/compiler.h \
-    $(wildcard include/config/sparse/rcu/pointer.h) \
-    $(wildcard include/config/trace/branch/profiling.h) \
-    $(wildcard include/config/profile/all/branches.h) \
-    $(wildcard include/config/enable/must/check.h) \
-    $(wildcard include/config/enable/warn/deprecated.h) \
-    $(wildcard include/config/kprobes.h) \
-  include/linux/compiler-gcc.h \
-    $(wildcard include/config/arch/supports/optimized/inlining.h) \
-    $(wildcard include/config/optimize/inlining.h) \
-  include/linux/compiler-gcc4.h \
-    $(wildcard include/config/arch/use/builtin/bswap.h) \
+deps_/home/gen/apue/test/timer/timer_list.o := \
+  include/linux/timer.h \
+    $(wildcard include/config/timer/stats.h) \
+    $(wildcard include/config/lockdep.h) \
+    $(wildcard include/config/debug/objects/timers.h) \
+    $(wildcard include/config/smp.h) \
+  include/linux/list.h \
+    $(wildcard include/config/debug/list.h) \
   include/linux/types.h \
     $(wildcard include/config/uid16.h) \
     $(wildcard include/config/lbdaf.h) \
@@ -35,32 +27,27 @@ deps_/home/gen/apue/test/modules/mycurrent.o := \
   /usr/src/linux-headers-3.13.0-93-generic/include/uapi/linux/posix_types.h \
   include/linux/stddef.h \
   include/uapi/linux/stddef.h \
+  include/linux/compiler.h \
+    $(wildcard include/config/sparse/rcu/pointer.h) \
+    $(wildcard include/config/trace/branch/profiling.h) \
+    $(wildcard include/config/profile/all/branches.h) \
+    $(wildcard include/config/enable/must/check.h) \
+    $(wildcard include/config/enable/warn/deprecated.h) \
+    $(wildcard include/config/kprobes.h) \
+  include/linux/compiler-gcc.h \
+    $(wildcard include/config/arch/supports/optimized/inlining.h) \
+    $(wildcard include/config/optimize/inlining.h) \
+  include/linux/compiler-gcc4.h \
+    $(wildcard include/config/arch/use/builtin/bswap.h) \
   /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/posix_types.h \
     $(wildcard include/config/x86/32.h) \
   /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/uapi/asm/posix_types_64.h \
   /usr/src/linux-headers-3.13.0-93-generic/include/uapi/asm-generic/posix_types.h \
-  include/linux/module.h \
-    $(wildcard include/config/sysfs.h) \
-    $(wildcard include/config/module/sig.h) \
-    $(wildcard include/config/unused/symbols.h) \
-    $(wildcard include/config/generic/bug.h) \
-    $(wildcard include/config/kallsyms.h) \
-    $(wildcard include/config/smp.h) \
-    $(wildcard include/config/tracepoints.h) \
-    $(wildcard include/config/tracing.h) \
-    $(wildcard include/config/event/tracing.h) \
-    $(wildcard include/config/ftrace/mcount/record.h) \
-    $(wildcard include/config/module/unload.h) \
-    $(wildcard include/config/constructors.h) \
-    $(wildcard include/config/debug/set/module/ronx.h) \
-  include/linux/list.h \
-    $(wildcard include/config/debug/list.h) \
   include/linux/poison.h \
     $(wildcard include/config/illegal/pointer/value.h) \
   /usr/src/linux-headers-3.13.0-93-generic/include/uapi/linux/const.h \
-  include/linux/stat.h \
-  /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/uapi/asm/stat.h \
-  include/uapi/linux/stat.h \
+  include/linux/ktime.h \
+    $(wildcard include/config/ktime/scalar.h) \
   include/linux/time.h \
     $(wildcard include/config/arch/uses/gettimeoffset.h) \
   include/linux/cache.h \
@@ -71,12 +58,16 @@ deps_/home/gen/apue/test/modules/mycurrent.o := \
     $(wildcard include/config/mmu.h) \
     $(wildcard include/config/prove/locking.h) \
     $(wildcard include/config/ring/buffer.h) \
+    $(wildcard include/config/tracing.h) \
+    $(wildcard include/config/ftrace/mcount/record.h) \
   /usr/lib/gcc/x86_64-linux-gnu/4.8/include/stdarg.h \
   include/linux/linkage.h \
   include/linux/stringify.h \
   include/linux/export.h \
     $(wildcard include/config/have/underscore/symbol/prefix.h) \
+    $(wildcard include/config/modules.h) \
     $(wildcard include/config/modversions.h) \
+    $(wildcard include/config/unused/symbols.h) \
   /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/linkage.h \
     $(wildcard include/config/x86/64.h) \
     $(wildcard include/config/x86/alignment/16.h) \
@@ -104,6 +95,8 @@ deps_/home/gen/apue/test/modules/mycurrent.o := \
   /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/processor-flags.h \
     $(wildcard include/config/vm86.h) \
   /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/uapi/asm/processor-flags.h \
+  include/linux/init.h \
+    $(wildcard include/config/broken/rodata.h) \
   /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/paravirt_types.h \
     $(wildcard include/config/x86/local/apic.h) \
     $(wildcard include/config/x86/pae.h) \
@@ -186,6 +179,7 @@ deps_/home/gen/apue/test/modules/mycurrent.o := \
     $(wildcard include/config/compat.h) \
     $(wildcard include/config/debug/stack/usage.h) \
   include/linux/bug.h \
+    $(wildcard include/config/generic/bug.h) \
   /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/bug.h \
     $(wildcard include/config/bug.h) \
     $(wildcard include/config/debug/bugverbose.h) \
@@ -263,7 +257,6 @@ deps_/home/gen/apue/test/modules/mycurrent.o := \
     $(wildcard include/config/x86/oostore.h) \
   include/linux/spinlock_types.h \
   include/linux/lockdep.h \
-    $(wildcard include/config/lockdep.h) \
     $(wildcard include/config/lock/stat.h) \
     $(wildcard include/config/prove/rcu.h) \
   include/linux/rwlock_types.h \
@@ -303,6 +296,32 @@ deps_/home/gen/apue/test/modules/mycurrent.o := \
     $(wildcard include/config/inline/read/unlock/irqrestore.h) \
     $(wildcard include/config/inline/write/unlock/irqrestore.h) \
   include/uapi/linux/time.h \
+  include/linux/jiffies.h \
+  include/linux/timex.h \
+  include/uapi/linux/timex.h \
+  /usr/src/linux-headers-3.13.0-93-generic/include/uapi/linux/param.h \
+  /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/uapi/asm/param.h \
+  include/asm-generic/param.h \
+    $(wildcard include/config/hz.h) \
+  include/uapi/asm-generic/param.h \
+  /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/timex.h \
+  /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/tsc.h \
+    $(wildcard include/config/x86/tsc.h) \
+  include/linux/debugobjects.h \
+    $(wildcard include/config/debug/objects.h) \
+    $(wildcard include/config/debug/objects/free.h) \
+  include/linux/module.h \
+    $(wildcard include/config/sysfs.h) \
+    $(wildcard include/config/module/sig.h) \
+    $(wildcard include/config/kallsyms.h) \
+    $(wildcard include/config/tracepoints.h) \
+    $(wildcard include/config/event/tracing.h) \
+    $(wildcard include/config/module/unload.h) \
+    $(wildcard include/config/constructors.h) \
+    $(wildcard include/config/debug/set/module/ronx.h) \
+  include/linux/stat.h \
+  /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/uapi/asm/stat.h \
+  include/uapi/linux/stat.h \
   include/linux/uidgid.h \
     $(wildcard include/config/uidgid/strict/type/checks.h) \
     $(wildcard include/config/user/ns.h) \
@@ -371,29 +390,10 @@ deps_/home/gen/apue/test/modules/mycurrent.o := \
     $(wildcard include/config/rcu/nocb/cpu.h) \
     $(wildcard include/config/no/hz/full/sysidle.h) \
   include/linux/completion.h \
-  include/linux/debugobjects.h \
-    $(wildcard include/config/debug/objects.h) \
-    $(wildcard include/config/debug/objects/free.h) \
   include/linux/rcutree.h \
   include/linux/workqueue.h \
     $(wildcard include/config/debug/objects/work.h) \
     $(wildcard include/config/freezer.h) \
-  include/linux/timer.h \
-    $(wildcard include/config/timer/stats.h) \
-    $(wildcard include/config/debug/objects/timers.h) \
-  include/linux/ktime.h \
-    $(wildcard include/config/ktime/scalar.h) \
-  include/linux/jiffies.h \
-  include/linux/timex.h \
-  include/uapi/linux/timex.h \
-  /usr/src/linux-headers-3.13.0-93-generic/include/uapi/linux/param.h \
-  /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/uapi/asm/param.h \
-  include/asm-generic/param.h \
-    $(wildcard include/config/hz.h) \
-  include/uapi/asm-generic/param.h \
-  /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/timex.h \
-  /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/tsc.h \
-    $(wildcard include/config/x86/tsc.h) \
   /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/mmzone.h \
   /usr/src/linux-headers-3.13.0-93-generic/arch/x86/include/asm/mmzone_64.h \
   include/linux/mmdebug.h \
@@ -701,6 +701,6 @@ deps_/home/gen/apue/test/modules/mycurrent.o := \
   include/linux/llist.h \
     $(wildcard include/config/arch/have/nmi/safe/cmpxchg.h) \
 
-/home/gen/apue/test/modules/mycurrent.o: $(deps_/home/gen/apue/test/modules/mycurrent.o)
+/home/gen/apue/test/timer/timer_list.o: $(deps_/home/gen/apue/test/timer/timer_list.o)
 
-$(deps_/home/gen/apue/test/modules/mycurrent.o):
+$(deps_/home/gen/apue/test/timer/timer_list.o):
