@@ -44,6 +44,7 @@ int main(void)
 	size_t len=strlen(p)+1;
 	char *t=path_alloc(&len);
 
+
 	printf("%d\n",ff(add,1,2));
 	printf("%d\n",ff(sub,1,2));
 	f(f1);

@@ -70,17 +70,17 @@ int main(int argc,char* argv[])
 		ntot=1;	/* avoid divide by 0;print 0 for all counts */
 	printf("regular files	= %7ld,%5.2f %%\n",nreg,nreg*100.0/ntot);
 
-	printf("directories		= %7ld,%5.2f %%\n",ndir,ndir*100.0/ntot);	
+	printf("directories	= %7ld,%5.2f %%\n",ndir,ndir*100.0/ntot);	
 
-	printf("block			= %7ld,%5.2f %%\n",nblk,nblk*100.0/ntot);
+	printf("block		= %7ld,%5.2f %%\n",nblk,nblk*100.0/ntot);
 
 	printf("char special	= %7ld,%5.2f %%\n",nchr,nchr*100.0/ntot);
 
-	printf("FIFOs 			= %7ld,%5.2f %%\n",nfifo,nfifo*100.0/ntot);
+	printf("FIFOs 		= %7ld,%5.2f %%\n",nfifo,nfifo*100.0/ntot);
 
 	printf("symbolic link	= %7ld,%5.2f %%\n",nslink,nslink*100.0/ntot);
 
-	printf("sockets			= %7ld,%5.2f %%\n",nsock,nsock*100.0/ntot);
+	printf("sockets		= %7ld,%5.2f %%\n",nsock,nsock*100.0/ntot);
 
 	exit(0);
 }
@@ -103,9 +103,80 @@ static int myftw(char *pathname,Myfunc *func)
 	// 获得 限制（PATH_MAX)
 	if(pathlen<=strlen(pathname)){
 			pathlen=strlen(pathname)*2;
-			if((fullpath = (char *)realloc(fullpath,pathlen))==NULL)
+			if((fullpath = (char *)realloc(fullpath,pathlen))==NULL) /* 为什么要加大fullpath的大小，大小为 pathname*2 */
 				err_sys("realloc error");
 	}
-	strcpy(fullpath,pathname);
+	strcpy(fullpath,pathname);// 在这里更新fullpath
 	return (dopath(func));
+}
+
+static int dopath(Myfunc *func)
+{
+	struct stat statbuf;
+	struct dirent *drip;
+	DIR *dp;
+	int ret ,n;
+
+	if(lstat(fullpath,&statbuf)<0)
+		return func(fullpath,&statbuf,FTW_N);
+
+	if(S_ISDIR(statbuf.st_mode)==0)	//兼容不完善
+		return func(fullpath,&statbuf,FTW_F);
+	/* if(S_IFDIR == (statbuf.st_mode & S_IFMT))
+	 * 		return func(fullpath,&statbuf,FTW_F);
+	 */
+
+	/* it's a directory */
+	if((ret = func(fullpath,&statbuf,FTW_D))!=0)
+		return ret;
+	n=strlen(fullpath);
+	if((size_t)(n+NAME_MAX+2)>pathlen){	//NAME_MAX 文件名最大字节数，n（文件名之前的路径），NAME_MAX(文件名允许最大值),2('/','\0')
+		pathlen *=2;// 如果fullpath不够大就翻倍
+		if((fullpath = (char *)realloc(fullpath,pathlen))==NULL)
+			err_sys("realloc error");
+	}
+	fullpath[n++]='/'; /* 以 '/' 结尾，n++后加式 */
+	fullpath[n]=0;
+	if((dp=opendir(fullpath)) == NULL)
+		return func(fullpath,&statbuf,FTW_DNR);
+	while((drip=readdir(dp))!=NULL){
+		if(strcmp(drip->d_name,".")==0 || strcmp(drip->d_name,"..") ==0)
+			continue;
+		strcpy(&fullpath[n],drip->d_name); /* append file name after "/"  把d_name复制到fullpath后面 更新了fullpath */
+		if((ret = dopath(func))!=0)
+			break;
+	}
+	fullpath[n-1]=0;// 截断，把d_name去掉
+	if(closedir(dp)<0)
+		err_ret("can't close directory %s,fullpath");
+	return ret;
+}
+
+static int myfunc(const char* pathname,const struct stat* statptr,int type)
+{
+	switch(type){
+		case FTW_F:
+			switch (statptr->st_mode & S_IFMT){ /* 为了兼容旧版本的UNIX 使用S_IFxxx宏 */
+				case S_IFREG:	nreg++;		break;
+				case S_IFBLK:	nblk++;		break;
+				case S_IFCHR:	nchr++;		break;
+				case S_IFIFO:	nfifo++;	break;
+				case S_IFLNK:	nslink++;	break;
+				case S_IFSOCK:	nsock++;	break;
+				case S_IFDIR:	err_dump("for S_IFDIR for %s",pathname);
+			}
+			break;
+		case FTW_D:
+			ndir++;
+			break;
+		case FTW_DNR:
+			err_ret("can't read directory %s",pathname);
+			break;
+		case FTW_N:
+			err_ret("stat error for %s",pathname);
+			break;
+		default:
+			err_dump("unknown type %d for pathname %s",type,pathname);
+	}
+	return 0;
 }
