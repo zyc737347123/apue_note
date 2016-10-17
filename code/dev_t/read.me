@@ -1,0 +1,5 @@
+dev_t define in <linux/types.h>
+代码不应该对设备编号的组织做任何假定，而应该始终使用<linux/kdev_t.h>的宏 // kernal 2.6.0
+MAJOR(dev_t dev)
+MINOR(dev_t dev)
+MKDEV(int major,int minor)

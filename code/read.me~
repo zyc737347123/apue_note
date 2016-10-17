@@ -1,4 +1,0 @@
-1.	为了使用apue.h和error.c.
-	将 apue.h 和 error.c 复制到 /usr/include/ 目录下.
-	然后再将 apue.h 最后一行的 #endif 前面添加 #include "error.c" 就 OK 了. 
-	这个也是可以的. 使用时直接包含头文件就行了. 由于在系统目录下, 无所谓 <> 和 "" 了.

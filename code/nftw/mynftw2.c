@@ -1,7 +1,8 @@
 #include<apue.h>
+#include<fcntl.h>
 #include<dirent.h>
 #include<limits.h>
-
+#include<unistd.h>
 /******************* path_alloc **************************/
 /**
 #ifdef PATH_MAX
@@ -55,7 +56,7 @@ typedef int Myfunc(const char*,const struct stat *,int);
 static Myfunc myfunc;
 static int myftw(char *,Myfunc *);//static 修饰符 函数,内部函数，不怕重名
 static int dopath(Myfunc *);
-static int dopath2(Myfunc *);
+static int dopath2(Myfunc *,char *);
 static long nreg,ndir,nblk,nchr,nfifo,nslink,nsock,ntot;
 
 int main(int argc,char* argv[])
@@ -108,52 +109,70 @@ static int myftw(char *pathname,Myfunc *func)
 				err_sys("realloc error");
 	}
 	strcpy(fullpath,pathname);// 在这里更新fullpath
-	return (dopath(func));
+	return (dopath2(func,fullpath));
 }
 
 #define D 1
 #define F 2
 
-
-static int dopath(Myfunc *func)
+static int dopath2(Myfunc *func,char *dir)
 {
+	size_t size;
+	char *ptr;
 	struct stat statbuf;
 	struct dirent *drip;
 	DIR *dp;
-	int ret ,n;
+	int ret,n;
 
-	if(lstat(fullpath,&statbuf)<0)
-		return func(fullpath,&statbuf,FTW_N);
-
-	if(S_ISDIR(statbuf.st_mode)==0)	//兼容不完善
-		return func(fullpath,&statbuf,FTW_F);
-	/* if(S_IFDIR == (statbuf.st_mode & S_IFMT))
-	 * 		return func(fullpath,&statbuf,FTW_F);
-	 */
-
-	/* it's a directory */
-	if((ret = func(fullpath,&statbuf,FTW_D))!=0)
-		return ret;
-	n=strlen(fullpath);
-	if((size_t)(n+NAME_MAX+2)>pathlen){	//NAME_MAX 文件名最大字节数，n（文件名之前的路径），NAME_MAX(文件名允许最大值),2('/','\0')
-		pathlen *=2;// 如果fullpath不够大就翻倍
-		if((fullpath = (char *)realloc(fullpath,pathlen))==NULL)
-			err_sys("realloc error");
+	char *file=path_alloc(&pathlen);
+	memset(file,0,pathlen);
+	strcpy(file,dir);
+	//printf("file: %s\n",file);
+	if((ret=fstatat(AT_FDCWD,file,&statbuf,AT_SYMLINK_NOFOLLOW))<0){
+		//printf("%d\n",ret);
+		return func(file,&statbuf,FTW_N);
 	}
-	fullpath[n++]='/'; /* 以 '/' 结尾，n++后加式 */
-	fullpath[n]=0;// for strcpy(&fullpath[n],drip->d_name)
-	if((dp=opendir(fullpath)) == NULL)
-		return func(fullpath,&statbuf,FTW_DNR);
+	if(S_ISDIR(statbuf.st_mode)==0)
+		return func(file,&statbuf,FTW_F);
+
+	if((ret = func(file,&statbuf,FTW_D))!=0)
+		return ret;
+
+	if(chdir(dir)<0)
+		err_sys("chdir error");
+
+	/*
+	ptr=path_alloc(&size);
+	if(getcwd(ptr,size)==NULL)
+		err_sys("getcwd error");
+	printf("1 cwd = %s\n",ptr);*/
+
+	//printf("dir: %s\n",dir);
+	if((dp=opendir("."))==NULL){
+		chdir("..");
+		return func(file,&statbuf,FTW_DNR);
+	}
 	while((drip=readdir(dp))!=NULL){
 		if(strcmp(drip->d_name,".")==0 || strcmp(drip->d_name,"..") ==0)
 			continue;
-		strcpy(&fullpath[n],drip->d_name); /* append file name after "/"  把d_name复制到fullpath后面 更新了fullpath */
-		if((ret = dopath(func))!=0)
+		//printf("dname %s:\n",drip->d_name);
+		if((ret = dopath2(func,drip->d_name))!=0)
 			break;
 	}
-	fullpath[n-1]=0;// 截断，把d_name去掉
-	if(closedir(dp)<0)
-		err_ret("can't close directory %s,fullpath");
+
+	/*ptr=path_alloc(&size);
+	if(getcwd(ptr,size)==NULL)
+		err_sys("getcwd error");
+	printf("2 cwd = %s\n",ptr);*/
+
+	chdir("..");
+	
+	/*ptr=path_alloc(&size);
+	if(getcwd(ptr,size)==NULL)
+		err_sys("getcwd error");
+	printf("3 cwd = %s\n",ptr);*/	
+		
+	closedir(dp);
 	return ret;
 }
 
