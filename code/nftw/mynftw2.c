@@ -55,7 +55,6 @@ typedef int Myfunc(const char*,const struct stat *,int);
 
 static Myfunc myfunc;
 static int myftw(char *,Myfunc *);//static 修饰符 函数,内部函数，不怕重名
-static int dopath(Myfunc *);
 static int dopath2(Myfunc *,char *);
 static long nreg,ndir,nblk,nchr,nfifo,nslink,nsock,ntot;
 
@@ -97,7 +96,6 @@ int main(int argc,char* argv[])
 
 static char *fullpath;	/* contains full pathname for everyfile */
 static size_t pathlen;
-static char *filepath;
 
 static int myftw(char *pathname,Myfunc *func)
 {
@@ -148,7 +146,7 @@ static int dopath2(Myfunc *func,char *dir)
 	printf("1 cwd = %s\n",ptr);*/
 
 	//printf("dir: %s\n",dir);
-	if((dp=opendir("."))==NULL){
+	if((dp=opendir("."))==NULL){ // key !!!!!
 		chdir("..");
 		return func(file,&statbuf,FTW_DNR);
 	}
