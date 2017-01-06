@@ -19,7 +19,7 @@ void TD2(int V,int N,int *w,int *v)
 				int tmp=max[i-1][j-v[i]]+w[i];
 				max[i][j]=max[i-1][j] > tmp ? max[i-1][j] : tmp;
 			}else{
-				max[i][j]=max[i-1][j];
+				max[i][j]=max[i-1][j]; // max[i][j]=max[i-1][j];
 			}
 		}
 	}
