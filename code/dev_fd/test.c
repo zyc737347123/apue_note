@@ -8,7 +8,7 @@ int main(void)
 		err_sys("open error");
 
 	char buf[100];
-	sprintf(buf,"/dev/fd/%d",fd1);
+	sprintf(buf,"/dev/fd/%d",fd1);//不安全的函数
 
 	if((fd2=open(buf,O_RDWR))<0)
 		err_sys("open error");

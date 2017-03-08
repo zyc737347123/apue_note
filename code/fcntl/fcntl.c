@@ -60,6 +60,6 @@ void set_FL(int fd,int flags)
 
 	val |= flags; /* turn on flags , use | for save old flags  */
 
-	if(fcntl(fd,F_SETFL,0)<0)
+	if(fcntl(fd,F_SETFL,val)<0)
 		err_sys("fcntl F_SETFL error");
 }
