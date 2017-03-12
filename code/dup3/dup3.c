@@ -27,7 +27,6 @@ int dup3(const int fd)
 
 	if((fl=fcntl(fd,F_GETFL,0))<0)
 		err_sys("get %d  FL error",fd);
-	get_FL(fl);
 
 	snprintf(buffer,sizeof(buffer),"%s%d",dir,fd);
 	

@@ -14,7 +14,7 @@ int main(int argc,char* argv[])
 	ptr=path_alloc(&size);
 	if(getcwd(ptr,size)==NULL)
 		err_sys("getcwd error");
-	printf("cwd = %s\nsize = %ld\n",ptr,size);
+	printf("cwd = %s\n",ptr);
 	exit(0);
 }
 
