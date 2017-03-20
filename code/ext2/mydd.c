@@ -1,6 +1,11 @@
-#include<apue.h>
+//#include<apue.h>
 #include<unistd.h>
 #include<fcntl.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<sys/stat.h>
+#include<stdarg.h>
 
 void readfile(const char* filename,const char* outf);
 unsigned int rdata(unsigned char* buf,int type);
@@ -14,6 +19,15 @@ int read4(const int in,const int out,off_t offset,off_t filesize);
 #define inode_size_add 0x458
 #define inode_per_group_add 0x428
 #define group_desc_add 0x800
+
+void err_sys(const char *fmt,...)
+{
+	va_list argv;
+	va_start(argv,fmt);
+	vprintf(fmt,argv);
+	printf("\n");
+	exit(0);
+}
 
 
 int main(int argc,char *argv[])
@@ -58,8 +72,9 @@ void readfile(const char* filename,const char* outf)
 	unsigned char super_and_group[3*K];
 	memset(super_and_group,0,sizeof(super_and_group));
 
-	if((stat(filename,&statbuf))!=0)
-			err_sys("stat %s error",filename);
+	if((stat(filename,&statbuf))!=0){
+			//err_sys("stat %s error",filename);
+	}
 	filesize=statbuf.st_size;
 	ino=statbuf.st_ino;
 	
@@ -80,7 +95,7 @@ void readfile(const char* filename,const char* outf)
 	inode_table_start = rdata(&super_and_group[add],4);
 
 	//compute the inode_add
-	inode_add = inode_table_start*K + (ino-1)*inode_size;
+	inode_add = inode_table_start*K + (ino-1-(file_group*inode_per_group))*inode_size;
 	iblock = inode_add + 0x28;
 	offset = iblock;
 	
