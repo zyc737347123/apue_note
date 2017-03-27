@@ -17,7 +17,9 @@ struct dir_item{
 void readfile(const char* filename,const char* outf);
 unsigned int rdata(unsigned char* buf,int type);
 int read1(const int in,const int out,off_t offset,off_t filesize);	// for file size <= 12KB
-int read2(const int in,const int out,off_t offset,off_t filesize);	// for file size <= 268KB and >12KB
+int read2(const int in,const int out,off_t offset,off_t filesize);	// for file size <= 268KB
+int read3(const int in,const int out,off_t offset,off_t filesize);
+int read4(const int in,const int out,off_t offset,off_t filesize);
 int readDir(const int in,off_t offset,off_t filesize);
 void d_printf(struct dir_item item);
 

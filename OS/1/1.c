@@ -34,6 +34,31 @@ int main(void)
 	exit(0);
 }
 
+/*
+int main(void)
+{
+	int i=0,j=0;
+	pid_t pid;
+	printf("hello from Parten Proc,PID is %d.\n",getpid());
+
+	pid=fork();
+
+	if(pid==0){
+		sleep(1);
+		for(i=0;i<3;i++){
+			printf("hello from Child Proc %d. %d times\n",getpid(),i+1);
+			sleep(1);
+		}
+	}else if(pid !=-1){
+		tpf("Parent forked one child proc--%d.\n",pid);
+		tpf("Parent is waiting for child to exit.\n");
+		waitpid(pid,NULL,0);
+		tpf("child proc has exited\n");
+		tpf("parent had exited\n");
+	}
+	exit(0);
+}*/
+
 int tpf(const char* fmt,...)
 {
 	va_list argv;

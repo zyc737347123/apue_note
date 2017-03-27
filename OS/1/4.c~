@@ -1,0 +1,31 @@
+#include<unistd.h>
+#include<stdarg.h>
+#include<time.h>
+#include<sys/types.h>
+#include<sys/wait.h>
+#include<stdio.h>
+#include<stdlib.h>
+
+int tpf(const char*,...);
+
+int main(void)
+{
+	pid_t pid;
+	pid=fork();
+
+	if(pid==0){
+		sleep(5);
+		tpf("Hellp from Child Pocess!\n");
+		tpf("I am calling exce\n");
+		execl("bin/ps","-a",NULL);
+		tpf("you never can see me\n");
+	}else if(pid !=-1){
+		tpf("hello from parent,pid %d\n",getpid());
+		sleep(1);
+		tpf("paretn is wait for child to exit\n");
+		waitpid(pid,NULL,0);
+		tpf("parent had exit\n");
+	}
+
+	exit(0);
+}

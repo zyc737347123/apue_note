@@ -6,25 +6,17 @@
 #include<sys/stat.h>
 #include<stdarg.h>
 
-struct dir_item{
-	unsigned int inode;
-	unsigned short rec_len;
-	unsigned char name_len;
-	unsigned char file_type;
-	char name[256];
-};
-
 void readfile(const char* filename,const char* outf);
 unsigned int rdata(unsigned char* buf,int type);
 int read1(const int in,const int out,off_t offset,off_t filesize);	// for file size <= 12KB
-int read2(const int in,const int out,off_t offset,off_t filesize);	// for file size <= 268KB and >12KB
-int readDir(const int in,off_t offset,off_t filesize);
-void d_printf(struct dir_item item);
-
+int read2(const int in,const int out,off_t offset,off_t filesize);	// for file size <= 268KB
+int read3(const int in,const int out,off_t offset,off_t filesize);
+int read4(const int in,const int out,off_t offset,off_t filesize);
+int readDir(const int in,off_t offset);
 #define K 1024													  	//this K is 1Kbyte
-#define INODE_SIZE_ADDR 0x458										//start address of inode_size
-#define INODE_PER_GROUP_ADDR 0x428									//start address of inode_per_group
-#define GROUP_DESC_ADDR 0x800										//start address of group descriptors
+#define INODE_SIZE_ADD 0x458										//start address of inode_size
+#define INODE_PER_GROUP_ADD 0x428									//start address of inode_per_group
+#define GROUP_DESC_ADD 0x800										//start address of group descriptors
 
 void err_sys(const char *fmt,...)
 {
@@ -43,13 +35,8 @@ int main(int argc,char *argv[])
 		exit(0);
 	}
 	
-	char *type=argv[1];
-	char *filename=argv[2];
-	char *outfile=NULL;
-	if(!strcmp(type,"-r"))
-		outfile=argv[3];
-	if(!strcmp(type,"-d"))
-		outfile="/dev/null";
+	char *filename=argv[1];
+	char *outfile=argv[2];
 
 	readfile(filename,outfile);
 
@@ -100,12 +87,12 @@ void readfile(const char* filename,const char* outf)
 	//get indoe_size and inode_per_group from SuperBlock
 	if((read(in,super_and_group,3*K))<3*K)
 		err_sys("read %s error",filename);
-	inode_size = rdata(&super_and_group[INODE_SIZE_ADDR],2);
-	inode_per_group = rdata(&super_and_group[INODE_PER_GROUP_ADDR],4);
+	inode_size = rdata(&super_and_group[INODE_SIZE_ADD],2);
+	inode_per_group = rdata(&super_and_group[INODE_PER_GROUP_ADD],4);
 
 	//get file_group and inode_table_start form group desc
 	file_group = ino / inode_per_group;
-	int add = GROUP_DESC_ADDR + file_group*0x20 + 8;
+	int add = GROUP_DESC_ADD + file_group*0x20 + 8;
 	inode_table_start = rdata(&super_and_group[add],4);
 
 	//compute the inode_address
@@ -128,8 +115,6 @@ void readfile(const char* filename,const char* outf)
 			res=read2(in,out,offset+(4*12),filesize);
 			//printf("%u\n",res);
 		}
-	}else if(S_ISDIR(statbuf.st_mode)){
-		readDir(in,offset,filesize);
 	}
 
 	close(in);
@@ -219,87 +204,7 @@ int read2(const int in,const int out,off_t offset,off_t filesize)
 	return lseek(out,0,SEEK_CUR);
 }
 
-int readDir(const int in,off_t offset,off_t filesize)
+int readDir(const int in,off_t offset)
 {
-	int i=0,j=0,seek=0;
-	unsigned int i_b[12];
-	unsigned char *buf = (unsigned char*)malloc(filesize);
-	memset(buf,0,filesize);
 
-	if(lseek(in,offset,SEEK_SET)!=offset)
-		err_sys("lseek error");
-	if(read(in,buf,4*12)!=4*12)
-		err_sys("read error");
-
-	for(i=0;i<12;i++){
-		i_b[i]=rdata(&buf[j],4);
-		j += 4;
-	}
-
-	j = filesize / K;
-
-	memset(buf,0,filesize);
-	for(i=0;i<j;i++){
-		lseek(in,i_b[i]*K,SEEK_SET);
-		read(in,&buf[seek],1024);
-		seek += 1024;
-	}
-
-	seek=0;
-	while(seek<filesize){
-		struct dir_item item;
-		if((item.inode=rdata(&buf[seek],4))==0)
-			break;
-		seek += 4;
-
-		item.rec_len = rdata(&buf[seek],2);
-		seek += 2;
-
-		item.name_len = buf[seek];
-		seek++;
-
-		item.file_type = buf[seek];
-		seek++;
-		
-		memcpy(item.name,&buf[seek],item.name_len);
-		item.name[item.name_len]='\0';
-
-		seek += item.rec_len - 8;
-
-		d_printf(item);
-	}
-
-	free(buf);
-	return 1;
-}
-
-void d_printf(struct dir_item item)
-{
-	char *type;
-	switch(item.file_type){
-		case 0:
-			type = "unknow";
-			break;
-		case 1:
-			type = "regular";
-			break;
-		case 2:
-			type = "dir";
-			break;
-		case 3:
-			type = "char";
-			break;
-		case 4:
-			type = "block";
-			break;
-		case 5:
-			type = "FIFO";
-			break;
-		case 6:
-			type = "SOCK";
-			break;
-		case 7:
-			type = "symlink";
-	}
-	printf("%u\t\t%s\t\t%s\n",item.inode,type,item.name);
 }
