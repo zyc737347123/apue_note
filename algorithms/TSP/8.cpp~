@@ -41,7 +41,7 @@ int k[1000];
 bool Vis[Node];
 
 struct cmp{
-	bool operator()(const int &a,const int &b)const
+	bool operator()(const int &a,const int &b)
 	{
 		return Paths[a].distance < Paths[b].distance || ( Paths[a].distance == Paths[b].distance && a < b);
 	}

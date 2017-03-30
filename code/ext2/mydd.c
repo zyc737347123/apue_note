@@ -1,3 +1,11 @@
+/**************************mydd.c************************
+ * mydd.c is used to read regular file and directory file
+ * the first parameter has two mode : -r / -d
+ * usage: exe_name -r filepath out_file_name
+ * usage: exe_name -d dir_file_name , this mode will printf to terminal
+ * email: zyc737347123@163.com
+ **************************Zyc***************************/
+
 #include<unistd.h>
 #include<fcntl.h>
 #include<stdio.h>
@@ -46,9 +54,9 @@ int main(int argc,char *argv[])
 	char *type=argv[1];
 	char *filename=argv[2];
 	char *outfile=NULL;
-	if(!strcmp(type,"-r"))
+	if(!strcmp(type,"-r"))	// -r mine file is regular file
 		outfile=argv[3];
-	if(!strcmp(type,"-d"))
+	if(!strcmp(type,"-d"))	// -d mine file is dir
 		outfile="/dev/null";
 
 	readfile(filename,outfile);
@@ -109,7 +117,7 @@ void readfile(const char* filename,const char* outf)
 	inode_table_start = rdata(&super_and_group[add],4);
 
 	//compute the inode_address
-	inode_add = inode_table_start*K + (ino-1-(file_group*inode_per_group))*inode_size;
+	inode_add = inode_table_start*K + ((ino-1) % inode_per_group)*inode_size;
 	iblock = inode_add + 0x28;
 	offset = iblock;
 	

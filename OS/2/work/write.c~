@@ -1,0 +1,33 @@
+#include<apue.h>
+#include<sys/sem.h>
+#include<sys/shm.h>
+#include<stdio.h>
+#include<string.h>
+#include "sem.h"
+
+int sem_shm;
+int sem_full;
+int sem_empty;
+int shm_id;
+
+int main(void)
+{
+	// get sem and shm
+	if((sem_shm=semget((key_t)1001,0,0666|IPC_CREAT))==-1)
+		err_sys("sem_shm get error");
+
+	if((sem_empty=semget((key_t)1002,0,0666|IPC_CREAT))==-1)
+		err_sys("sem_empty get error");
+
+	if((sem_full=semget((key_t)1003,0,0666|IPC_CREAT))==-1)
+		err_sys("sem_full get error");
+
+	if((shm_id=shmget((key_t)1004,sizeof(shmbuf),0666|IPC_CREAT))==-1)
+		err_sys("shm get error");
+
+	// init sem and shm
+	void *shm = NULL;
+
+
+
+}
