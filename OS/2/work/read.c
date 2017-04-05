@@ -3,6 +3,8 @@
 #include<sys/shm.h>
 #include<stdio.h>
 #include<string.h>
+#include<time.h>
+#include<unistd.h>
 #include "sem.h"
 
 int sem_shm;
@@ -12,16 +14,19 @@ int shm_id;
 
 int main(void)
 {
+	srand(time(NULL));
+
+	fork();
+
 	// get sem and init sem
-	sem_get(&sem_shm,1001);
+	sem_get(&sem_shm,1001,1);
 
-	sem_get(&sem_empty,1002);
+	sem_get(&sem_empty,1002,1024);
 
-	sem_get(&sem_full,1003);
+	sem_get(&sem_full,1003,0);
 
 	void *shm =NULL;
 	shmbuf *sbuf = NULL;
-	char outbuf[1024];
 
 	// get shm and init shm
 	if((shm_id=shmget((key_t)1004,sizeof(shmbuf),0666|IPC_CREAT))==-1)
@@ -30,35 +35,29 @@ int main(void)
 		err_sys("shmat error");
 	sbuf = (shmbuf*)shm;
 
-	int run=1,i=0;
+	int run=1,j=0;
 	while(run){
-		sleep(2);
-		sem_p(sem_shm);
+		sleep(rand()%2);
 
-		i = sbuf->count;
-		if(sbuf->count == 0){
-			sem_v(sem_shm);
-			sem_v(sem_empty);
-			sem_p(sem_full);
-			sem_p(sem_shm);
+		sem_p(sem_full);
+		if(!sem_p(sem_shm))
+			err_sys("sem p error");
+		j = sbuf->index;
+		char c = sbuf->buf[j];
+		if(c!=0)
+			printf("%c",c);
+		fflush(stdout);
+		sleep(1);
+		if(c=='#'){
+			run = 0;
+			printf("\n");
 		}
-		int j=0,k=0;
-		memset(outbuf,0,1024);
-		for(j=0;j<sbuf->count;j++){
-			if(sbuf->buf[j] == '\0'){
-				printf("%s",outbuf);
-				if(strncmp(outbuf,"end",3)==0)
-					run=0;
-				memset(outbuf,0,1024);
-				k=0;
-				continue;
-			}
-			//fputc(sbuf->buf[j],stdout);
-			outbuf[k]=sbuf->buf[j];
-			k++;
-		}
-		sbuf->count -= j+1;
+		sbuf->index = (sbuf->index + 1)%1024;
 		sem_v(sem_shm);
+		sem_v(sem_empty);
+		
+		//union semun sem_union;
+		//int v = semctl(sem_full,0,GETVAL,sem_union);
 	}
 
 	// free the shm 

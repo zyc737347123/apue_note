@@ -7,7 +7,7 @@
 #include "sem.h"
 
 
-void sem_get(int *sem,int key)
+void sem_get(int *sem,int key,int init_value)
 {
 	if((*sem=semget((key_t)key,1,0666 | IPC_CREAT | IPC_EXCL))==-1){
 		// sem has inti
@@ -18,16 +18,16 @@ void sem_get(int *sem,int key)
 		}
 	}else{
 		// we need init sem
-		set_semvalue(*sem);
+		set_semvalue(*sem,init_value);
 	}
 }
 
-int set_semvalue(int sem)
+int set_semvalue(int sem,int value)
 {
 	union semun sem_union;
 
 	// must before use sem
-	sem_union.val = 1; // init sem value
+	sem_union.val = value; // init sem value
 	if(semctl(sem,0,SETVAL,sem_union) == -1)
 		return 0;
 	return 1;

@@ -3,6 +3,7 @@
 #include<sys/shm.h>
 #include<stdio.h>
 #include<string.h>
+#include<time.h>
 #include "sem.h"
 
 int sem_shm;
@@ -12,12 +13,13 @@ int shm_id;
 
 int main(void)
 {
+	srand(time(NULL));
 	// get sem and init sem
-	sem_get(&sem_shm,1001);
+	sem_get(&sem_shm,1001,1);
 
-	sem_get(&sem_empty,1002);
+	sem_get(&sem_empty,1002,1024);
 
-	sem_get(&sem_full,1003);
+	sem_get(&sem_full,1003,0);
 
 	void *shm =NULL;
 	shmbuf *sbuf = NULL;
@@ -33,33 +35,33 @@ int main(void)
 	int run=1;
 	int i=0;
 	while(run){
-		sem_p(sem_shm);
-
-		i = sbuf->count;
-		if(i<0){
-			sbuf->count=0;
-			i=0;
-		}
-		if(sbuf->count>=1023){
-			sem_v(sem_shm);
-			sem_v(sem_full);
-			sem_p(sem_empty);
-			sem_p(sem_shm);
-		}
 		
+		printf("type some\n");
 		memset(inbuf,0,1024);
 		fgets(inbuf,1024,stdin);
 		int len = strlen(inbuf);
+		int cc=0;
 		len++; // include \0
-		len = 1024-sbuf->count >= 0 ? len : 1024-sbuf->count;
-		strncpy(&(sbuf->buf[i]),inbuf,len);
-		//printf("%d\n",i);
-		sbuf->count += len;
-		sbuf->buf[1023]=0;
-		sem_v(sem_shm);
-		if(strncmp(inbuf,"end",3)==0)
+
+		//len = 1024-sbuf->count >= 0 ? len : 1024-sbuf->count;
+		//strncpy(&(sbuf->buf[i]),inbuf,len);
+		
+		while(cc<len){
+			sem_p(sem_empty);
+
+			sem_p(sem_shm);
+			i = sbuf->count;
+			sbuf->buf[i] = inbuf[cc];
+			i++;
+			cc++;
+			sbuf->count = (sbuf->count + 1)%1024;
+			sem_v(sem_shm);
+			sem_v(sem_full);
+		}
+
+		if(strncmp(inbuf,"#",1)==0)
 			run=0;
-		sleep(1);
+		sleep(rand()%10);
 	}
 
 	// free the shm 
