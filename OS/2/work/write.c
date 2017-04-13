@@ -40,20 +40,17 @@ int main(void)
 		memset(inbuf,0,1024);
 		fgets(inbuf,1024,stdin);
 		int len = strlen(inbuf);
-		int cc=0;
+		int count=0;
 		len++; // include \0
 
-		//len = 1024-sbuf->count >= 0 ? len : 1024-sbuf->count;
-		//strncpy(&(sbuf->buf[i]),inbuf,len);
-		
-		while(cc<len){
+		while(count<len){
 			sem_p(sem_empty);
 
 			sem_p(sem_shm);
-			i = sbuf->count;
-			sbuf->buf[i] = inbuf[cc];
+			i = sbuf->count; // write ptr
+			sbuf->buf[i] = inbuf[count];
 			i++;
-			cc++;
+			count++;
 			sbuf->count = (sbuf->count + 1)%1024;
 			sem_v(sem_shm);
 			sem_v(sem_full);

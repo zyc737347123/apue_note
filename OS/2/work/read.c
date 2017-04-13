@@ -41,13 +41,12 @@ int main(void)
 
 		sem_p(sem_full);
 		if(!sem_p(sem_shm))
-			err_sys("sem p error");
-		j = sbuf->index;
+			err_sys("sem p error"); // if sem is not exist , proc will exit
+		j = sbuf->index; // read ptr
 		char c = sbuf->buf[j];
 		if(c!=0)
 			printf("%c",c);
 		fflush(stdout);
-		sleep(1);
 		if(c=='#'){
 			run = 0;
 			printf("\n");
@@ -56,11 +55,9 @@ int main(void)
 		sem_v(sem_shm);
 		sem_v(sem_empty);
 		
-		//union semun sem_union;
-		//int v = semctl(sem_full,0,GETVAL,sem_union);
 	}
 
-	// free the shm 
+	// free and delete the shm 
 	if(shmdt(shm)==-1)
 		err_sys("shmdt error");
 	if(shmctl(shm_id,IPC_RMID,0)==-1)
@@ -70,5 +67,6 @@ int main(void)
 	del_semvalue(sem_shm);
 	del_semvalue(sem_empty);
 	del_semvalue(sem_full);
+
 	exit(0);
 }
