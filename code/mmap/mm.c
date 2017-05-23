@@ -10,9 +10,15 @@ typedef struct{
 
 int main(void)
 {
-	mb *ptr;
+	char *ptr;
 	printf("%ld\n",sizeof(mb)/1024);
-	ptr = (mb*)malloc(sizeof(mb));
+	getchar();
+	getchar();
+	ptr = (char*)malloc(sizeof(mb));
+	printf("%0x\n",ptr);
+	int i=0;/*
+	for(i=0;i<64*K*K;i++)
+		ptr[i]='a';*/
 	getchar();
 	return 0;
 }

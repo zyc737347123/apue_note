@@ -12,7 +12,7 @@ void pf(int *a,int n)
 int main(void)
 {
 	int a[10]={9,12,17,30,50,20,60,65,4,19};
-	MakeMinHeap2(a,10);
+	MakeMinHeap1(a,10);
 	pf(a,10);
 	MinHeapSort(a,10);
 	pf(a,10);

@@ -28,6 +28,7 @@ int main(void)
 		err_exit(err,"can't create thread");
 	printids("main thread:");
 	sleep(1);
+	getchar();
 	exit(0);
 }
 
