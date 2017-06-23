@@ -15,6 +15,13 @@
 struct super_block s_model;
 struct group_desc g_model;
 
+uint8_t *filesys = NULL;
+
+void get_super_block()
+{
+	memcpy(&s_model, filesys, sizeof(struct super_block));
+}
+
 void zfs_init_zero(uint8_t *byte, int g_nr)
 {
 	struct block_bitmap *bmap;
@@ -97,16 +104,6 @@ void zfs_init_other(uint8_t *byte, int g_nr)
 		bmap->map[i] = 1;
 	}
 
-	memcpy((void*)bytep, (void*)&s_model, sizeof(s_model));
-	memcpy((void*)(bytep + sizeof(s_model)), (void*)&g_model, sizeof(g_model));
-
-	bytep += 1*K; // block 1
-	bmap = (struct block_bitmap*)bytep;
-	memset(bmap, 0, sizeof(struct block_bitmap));
-	for(i = 0;i < 68;i++) {
-		bmap->map[i] = 1;
-	}
-
 	bytep += 1*K; // block 2
 	imap = (struct inode_bitmap*)bytep;
 	memset(imap, 0, sizeof(struct inode_bitmap));
@@ -124,10 +121,14 @@ void zfs_init(void *fsmmap)
 	struct super_block *sp;
 	uint8_t *bytep;
 
+	filesys = (uint8_t*)fsmmap;
+
 	sp = (struct super_block*)fsmmap;
 	bytep = (uint8_t*)fsmmap;
 
+	
 	if(sp->vaild) {
+		get_super_block();
 		printf("zfs had init\n");
 		return;
 	}
@@ -140,4 +141,89 @@ void zfs_init(void *fsmmap)
 		zfs_init_other(bytep, i);
 	}
 
+}
+
+int zfs_read(uint32_t inodes, char *buf, const uint32_t size)
+{
+	int g_nr, inode_offset;
+	uint32_t i;
+	uint8_t *bytep;
+	struct group_desc *gd;
+	struct zfs_inode zfsi;
+	struct inode_table *it;
+
+	g_nr = inodes / s_model.inodes_per_group;
+	inode_offset = inodes % s_model.inodes_per_group;
+
+	bytep = filesys + (g_nr * s_model.blocks_per_group * 
+			s_model.block_size);
+
+	bytep += sizeof(s_model);	
+
+	gd = (struct group_desc*)bytep;
+
+	bytep = filesys + (gd->bg_inode_table * s_model.block_size);
+
+	it = (struct inode_table*)bytep;
+
+	zfsi = it->table[inode_offset];
+
+	int j = 0, k = 0;
+
+	for(i = 0; i < size && i < zfsi.i_size; i++) {
+		if(i % s_model.block_size == 0) {
+			bytep = filesys + (zfsi.i_block[j++] * s_model.block_size);
+			k = 0;
+		}
+		buf[i] = bytep[k++];
+	}
+
+	return i+1;
+}
+
+int zfs_read_dir(uint32_t inodes, struct zfs_dir_entry *zde)
+{
+
+	int g_nr, inode_offset;
+	uint32_t i = 0;
+	uint8_t *bytep;
+	struct group_desc *gd;
+	struct zfs_inode zfsi;
+	struct inode_table *it;
+	struct zfs_dir_entry *tmp_zde;
+
+	printf("sm : %d\n",s_model.block_size);
+
+	g_nr = inodes / s_model.inodes_per_group;
+
+	inode_offset = inodes % s_model.inodes_per_group;
+
+	bytep = filesys + (g_nr * s_model.blocks_per_group * 
+			s_model.block_size);
+
+	bytep += sizeof(s_model);	
+
+	gd = (struct group_desc*)bytep;
+
+	bytep = filesys + (gd->bg_inode_table * s_model.block_size);
+
+	it = (struct inode_table*)bytep;
+
+	zfsi = it->table[inode_offset];
+	
+	printf("data block %d", zfsi.i_block[0]);
+
+	bytep = filesys + (zfsi.i_block[0] * s_model.block_size);
+
+	tmp_zde = (struct zfs_dir_entry*)bytep;
+
+	for(i = 0; i < (s_model.block_size / sizeof(struct zfs_dir_entry)) ; i++) {
+		if(tmp_zde[i].name_len == 0) {
+			i--;
+			break;
+		}
+		zde[i] = tmp_zde[i];	
+	}
+
+	return i+1;
 }

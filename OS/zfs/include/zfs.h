@@ -54,4 +54,8 @@ struct zfs_dir_entry {
 };
 
 void zfs_init(void *fsmmap);
+
+int zfs_read_dir(uint32_t inodes, struct zfs_dir_entry *zde);
+
+int zfs_read(uint32_t inodes, char *buf, const uint32_t size);
 #endif
