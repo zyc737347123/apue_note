@@ -227,3 +227,66 @@ int zfs_read_dir(uint32_t inodes, struct zfs_dir_entry *zde)
 
 	return i+1;
 }
+
+uint32_t zfs_create(uint8_t type)
+{
+	uint8_t *bytep = (uint8_t*)filesys;
+	uint32_t inode = -1;
+	struct group_desc *gd;
+	struct inode_table *it;
+	int i;
+	int inode_offset = 0;
+	int block_offset = 0;
+
+
+	for(i = 1; i < GROUP_NUM; i++) {
+		gd = (struct group_desc*)(bytep + sizeof(struct super_block));
+
+		if(gd->free_inodes_count && gd->free_block_count) {
+			struct inode_bitmap *im;
+			struct block_bitmap *bm;
+			im = (struct inode_bitmap*)(filesys + 
+					s_model.block_size * gd->bg_inode_table);
+			for(; inode_offset < 1024 ; inode_offset++) {
+				if(im->map[inode_offset] == 0) {
+					im->map[inode_offset] = 1;
+					gd->free_inodes_count--;
+					break;
+				}
+			}
+			
+			if(type == 0) {	
+				bm = (struct block_bitmap*)(filesys +
+							s_model.block_size * gd->bg_block_bitmap);
+				for(; block_offset < 1024; block_offset++) {
+					if(bm->map[block_offset] == 0) {
+						bm->map[block_offset] = 1;
+						gd->free_block_count--;
+						break;
+					}
+				}
+			}
+
+			break;
+		}
+
+		bytep += s_model.block_size * s_model.blocks_per_group;
+	}
+
+	if(i == GROUP_NUM)
+		return inode;
+
+	inode = gd->group_nr * s_model.inodes_per_group + inode_offset;
+	block_offset += gd->group_nr * s_model.blocks_per_group;
+
+	it = (struct inode_table*)(filesys + 
+			gd->bg_inode_table * s_model.block_size);
+
+	if(type == 0) {
+		it->table[inode_offset].i_size = 1*K;
+		it->table[inode_offset].i_blocks = 1;
+		it->table[inode_offset].i_block[0] = block_offset;
+	}
+
+	return inode;
+}
