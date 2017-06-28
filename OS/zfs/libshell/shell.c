@@ -8,7 +8,7 @@
 #include <shell.h>
 
 static struct termios termsettings;
-static char defprompt[] = "[debug@oaid] $";
+char defprompt[100] = "[zyc@zfs] $ ";
 static char bsstring[] = "\b \b";
 static char endline[] = "\r\n";
 
@@ -42,7 +42,7 @@ static int init_console(struct termios *defsetting)
 
 	setting.c_lflag &= ~ICANON;
 	setting.c_lflag &= ~ECHO;
-	setting.c_lflag &= ~ISIG;
+	//setting.c_lflag &= ~ISIG;
 
 	setting.c_cc[VMIN] = 1;
 	setting.c_cc[VTIME] = 1;

@@ -12,6 +12,8 @@
 #define M 1024*1024
 #define GROUP_NUM 100
 
+extern char defprompt[100];
+
 struct super_block s_model;
 struct group_desc g_model;
 
@@ -117,6 +119,10 @@ void zfs_init_other(uint8_t *byte, int g_nr)
 }
 void zfs_init(void *fsmmap)
 {
+	/*test*/
+	sprintf(defprompt, "[zyc@zfs:/] $ ");
+	/*test*/
+
 	int i;
 	struct super_block *sp;
 	uint8_t *bytep;
@@ -127,11 +133,13 @@ void zfs_init(void *fsmmap)
 	bytep = (uint8_t*)fsmmap;
 
 	
-	if(sp->vaild) {
+	if(sp->vaild && 0) {
 		get_super_block();
 		printf("zfs had init\n");
 		return;
 	}
+
+	memset(fsmmap, 0, 100*M);
 
 	for(i = 0;i < GROUP_NUM;i++, bytep += M){
 		if(i == 0){
@@ -179,11 +187,11 @@ int zfs_read(uint32_t inodes, char *buf, const uint32_t size)
 	}
 
 	return i+1;
+
 }
 
 int zfs_read_dir(uint32_t inodes, struct zfs_dir_entry *zde)
 {
-
 	int g_nr, inode_offset;
 	uint32_t i = 0;
 	uint8_t *bytep;
@@ -191,8 +199,6 @@ int zfs_read_dir(uint32_t inodes, struct zfs_dir_entry *zde)
 	struct zfs_inode zfsi;
 	struct inode_table *it;
 	struct zfs_dir_entry *tmp_zde;
-
-	printf("sm : %d\n",s_model.block_size);
 
 	g_nr = inodes / s_model.inodes_per_group;
 
@@ -211,8 +217,6 @@ int zfs_read_dir(uint32_t inodes, struct zfs_dir_entry *zde)
 
 	zfsi = it->table[inode_offset];
 	
-	printf("data block %d", zfsi.i_block[0]);
-
 	bytep = filesys + (zfsi.i_block[0] * s_model.block_size);
 
 	tmp_zde = (struct zfs_dir_entry*)bytep;
@@ -238,7 +242,6 @@ uint32_t zfs_create(uint8_t type)
 	int inode_offset = 0;
 	int block_offset = 0;
 
-
 	for(i = 1; i < GROUP_NUM; i++) {
 		gd = (struct group_desc*)(bytep + sizeof(struct super_block));
 
@@ -246,7 +249,8 @@ uint32_t zfs_create(uint8_t type)
 			struct inode_bitmap *im;
 			struct block_bitmap *bm;
 			im = (struct inode_bitmap*)(filesys + 
-					s_model.block_size * gd->bg_inode_table);
+					s_model.block_size * gd->bg_inode_bitmap);
+
 			for(; inode_offset < 1024 ; inode_offset++) {
 				if(im->map[inode_offset] == 0) {
 					im->map[inode_offset] = 1;
@@ -254,6 +258,7 @@ uint32_t zfs_create(uint8_t type)
 					break;
 				}
 			}
+
 			
 			if(type == 0) {	
 				bm = (struct block_bitmap*)(filesys +
@@ -266,12 +271,15 @@ uint32_t zfs_create(uint8_t type)
 					}
 				}
 			}
+			
 
 			break;
 		}
 
 		bytep += s_model.block_size * s_model.blocks_per_group;
 	}
+
+
 
 	if(i == GROUP_NUM)
 		return inode;
@@ -282,11 +290,169 @@ uint32_t zfs_create(uint8_t type)
 	it = (struct inode_table*)(filesys + 
 			gd->bg_inode_table * s_model.block_size);
 
-	if(type == 0) {
+
+	if(type == 0) {	
 		it->table[inode_offset].i_size = 1*K;
 		it->table[inode_offset].i_blocks = 1;
 		it->table[inode_offset].i_block[0] = block_offset;
+	} else {
+		it->table[inode_offset].i_size = 0;
+		it->table[inode_offset].i_blocks = 0;
+		it->table[inode_offset].i_block[0] = 0;
 	}
 
 	return inode;
+}
+
+int zfs_write_dir(uint32_t dir_inode, uint32_t inode, char *name, uint8_t type)
+{
+
+	int g_nr, inode_offset;
+	uint32_t i = 0;
+	uint8_t *bytep;
+	struct group_desc *gd;
+	struct zfs_inode zfsi;
+	struct inode_table *it;
+	struct zfs_dir_entry *tmp_zde;
+
+	if(strlen(name) > 64)
+		return -1;
+
+	g_nr = dir_inode / s_model.inodes_per_group;
+
+	inode_offset = dir_inode % s_model.inodes_per_group;
+
+	bytep = filesys + (g_nr * s_model.blocks_per_group * 
+			s_model.block_size);
+
+	bytep += sizeof(s_model);	
+
+	gd = (struct group_desc*)bytep;
+
+	bytep = filesys + (gd->bg_inode_table * s_model.block_size);
+
+	it = (struct inode_table*)bytep;
+
+	zfsi = it->table[inode_offset];
+	
+	bytep = filesys + (zfsi.i_block[0] * s_model.block_size);
+
+	tmp_zde = (struct zfs_dir_entry*)bytep;
+
+	for(i = 0; i < (s_model.block_size / sizeof(struct zfs_dir_entry)) ; i++) {
+		if(tmp_zde[i].name_len == 0) {
+			tmp_zde[i].inodes = inode;
+			tmp_zde[i].type = type;
+			tmp_zde[i].name_len = strlen(name);
+			strcpy(tmp_zde[i].name, name);
+			break;
+		}
+	}
+
+	return sizeof(struct zfs_dir_entry);
+
+}
+
+int set_b_bitmap(uint32_t block_num)
+{
+	return 0;
+}
+
+int set_i_bitmap(uint32_t inode_num)
+{
+	return 0;
+}
+
+int zfs_write(uint32_t inodes, char *buf, const uint32_t size)
+{
+	int g_nr, inode_offset;
+	int block_offset;
+	uint32_t i = 0;
+	uint8_t *bytep;
+	struct group_desc *gd;
+	struct zfs_inode zfsi;
+	struct inode_table *it;
+	uint8_t *ptr;
+
+	g_nr = inodes / s_model.inodes_per_group;
+	inode_offset = inodes % s_model.inodes_per_group;
+
+	bytep = filesys + (g_nr * s_model.blocks_per_group * 
+			s_model.block_size);
+
+	bytep += sizeof(s_model);	
+
+	gd = (struct group_desc*)bytep;
+
+	bytep = filesys + (gd->bg_inode_table * s_model.block_size);
+
+	it = (struct inode_table*)bytep;
+
+	zfsi = it->table[inode_offset];
+
+	int j = 0, k = 0;
+
+	if(size <= zfsi.i_size) {
+		for(i = 0; i < size ; i++) {
+			if(i % s_model.block_size == 0) {
+				bytep = filesys + (zfsi.i_block[j++] * s_model.block_size);
+				k = 0;
+			}
+			bytep[k++] = buf[i];
+		}
+	} else {
+		for(; (uint32_t)j < zfsi.i_blocks ;) {
+			ptr = filesys + (zfsi.i_block[j++] * s_model.block_size);
+			if(size - i > s_model.block_size) {
+				memcpy(ptr, &buf[i], s_model.block_size);
+				i += s_model.block_size;
+			} else {
+				memcpy(ptr, &buf[i], size - i);
+				i = size;
+				return size;
+			}
+		}
+	}
+
+	if((uint32_t)j <= zfsi.i_blocks) {
+		while((uint32_t)j != zfsi.i_blocks) {
+			set_b_bitmap(zfsi.i_block[j]);
+		}
+		return size;
+	}
+
+	bytep = (uint8_t*)filesys;
+	for(k = 1; k < GROUP_NUM; k++) {
+		gd = (struct group_desc*)(bytep + sizeof(struct super_block));
+		if(gd->free_block_count > 0) {
+			struct block_bitmap *bm;
+			int block_num;
+
+			bm = (struct block_bitmap*)(filesys +
+					s_model.block_size * gd->bg_block_bitmap);
+			for(block_offset = 0; block_offset < 1024; block_offset++) {
+				if(bm->map[block_offset] == 0) {
+					bm->map[block_offset] = 1;
+					gd->free_block_count--;
+					block_num = gd->group_nr * s_model.blocks_per_group + block_offset;
+					ptr = filesys + block_num * s_model.block_size;
+
+					if(size - i > s_model.block_size) {
+						memcpy(ptr, &buf[i], s_model.block_size);
+						i += s_model.block_size;
+						zfsi.i_block[j++] = block_num;
+					} else {
+						memcpy(ptr, &buf[i], size - i);
+						i = size;
+						zfsi.i_block[j++] = block_num;
+						return size;
+					}
+				}
+			}
+		}
+	}
+
+
+	return size;
+
 }

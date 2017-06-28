@@ -39,5 +39,7 @@ struct histcommand_desc
 void shell_init(void);
 void shell_run(void);
 void shell_cmd_init(void);
+void command_register(const char *name,
+		int (*function)(int, char**), const char *hints);
 
 #endif

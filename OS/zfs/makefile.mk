@@ -4,12 +4,12 @@ AR = $(PREFIX)ar
 
 
 INCDIR = $(TOPDIR)/include
-LIBFCVDIR = $(TOPDIR)/lib
-
-FCVLIB = $(LIBFCVDIR)/libzfs.a
+LIBDIR = $(TOPDIR)/lib
+LIBSHELLDIR += $(TOPDIR)/libshell
 
 linksyslibs = -lm -lpthread
-linkfcvlibs = -L$(LIBFCVDIR) -lzfs
+linkfcvlibs = -L$(LIBDIR) -lzfs
+linkfcvlibs += -L$(LIBSHELLDIR) -lshell
 
 CFLAGS += -Wall -O2
 CFLAGS += -I$(INCDIR)

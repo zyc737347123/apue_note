@@ -4,8 +4,8 @@ export TOPDIR
 
 include $(TOPDIR)/makefile.mk
 
-LIBDIRS = $(LIBFCVDIR)
-LIBDIRS += $(MLIBDIR)
+LIBDIRS = $(LIBDIR)
+LIBDIRS += $(LIBSHELLDIR)
 
 APPDIRS = $(TOPDIR)/zfs
 

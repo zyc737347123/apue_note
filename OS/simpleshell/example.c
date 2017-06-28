@@ -7,6 +7,7 @@
 
 int main(int argc, char ** argv)
 {
+	shell_init();
 	shell_run();
 
 	return 0;

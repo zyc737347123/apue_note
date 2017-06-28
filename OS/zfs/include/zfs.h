@@ -58,4 +58,10 @@ void zfs_init(void *fsmmap);
 int zfs_read_dir(uint32_t inodes, struct zfs_dir_entry *zde);
 
 int zfs_read(uint32_t inodes, char *buf, const uint32_t size);
+
+uint32_t zfs_create(uint8_t type);
+
+int zfs_write_dir(uint32_t dir_inode, uint32_t inode, char *name, uint8_t type);
+
+int zfs_write(uint32_t inodes, char *buf, const uint32_t size);
 #endif
