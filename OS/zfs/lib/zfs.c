@@ -375,6 +375,11 @@ int zfs_write_dir(uint32_t dir_inode, uint32_t inode, char *name, uint8_t type)
 			strcpy(tmp_zde[i].name, name);
 			break;
 		}
+		if(tmp_zde[i].inodes == inode) {
+			tmp_zde[i].name_len = strlen(name);
+			strcpy(tmp_zde[i].name, name);
+			break;
+		}
 	}
 
 	return sizeof(struct zfs_dir_entry);
