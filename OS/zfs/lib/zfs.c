@@ -133,7 +133,7 @@ void zfs_init(void *fsmmap)
 	bytep = (uint8_t*)fsmmap;
 
 	
-	if(sp->vaild && 0) {
+	if(sp->vaild ) {
 		get_super_block();
 		printf("zfs had init\n");
 		return;
@@ -149,6 +149,34 @@ void zfs_init(void *fsmmap)
 		zfs_init_other(bytep, i);
 	}
 
+}
+
+int zfs_read_info(uint32_t inodes, struct zfs_inode *info)
+{
+	int g_nr, inode_offset;
+	uint8_t *bytep;
+	struct group_desc *gd;
+	struct zfs_inode zfsi;
+	struct inode_table *it;
+
+	g_nr = inodes / s_model.inodes_per_group;
+	inode_offset = inodes % s_model.inodes_per_group;
+
+	bytep = filesys + (g_nr * s_model.blocks_per_group * 
+			s_model.block_size);
+
+	bytep += sizeof(s_model);	
+
+	gd = (struct group_desc*)bytep;
+
+	bytep = filesys + (gd->bg_inode_table * s_model.block_size);
+
+	it = (struct inode_table*)bytep;
+
+	zfsi = it->table[inode_offset];
+	*info = zfsi;
+
+	return 0;
 }
 
 int zfs_read(uint32_t inodes, char *buf, const uint32_t size)
@@ -347,6 +375,11 @@ int zfs_write_dir(uint32_t dir_inode, uint32_t inode, char *name, uint8_t type)
 			strcpy(tmp_zde[i].name, name);
 			break;
 		}
+		if(tmp_zde[i].inodes == inode) {
+			tmp_zde[i].name_len = strlen(name);
+			strcpy(tmp_zde[i].name, name);
+			break;
+		}
 	}
 
 	return sizeof(struct zfs_dir_entry);
@@ -355,6 +388,22 @@ int zfs_write_dir(uint32_t dir_inode, uint32_t inode, char *name, uint8_t type)
 
 int set_b_bitmap(uint32_t block_num)
 {
+	int gnr = block_num / s_model.blocks_per_group;
+	int block_offset = block_num % s_model.blocks_per_group;
+
+	struct group_desc *gd;
+	struct block_bitmap *bm;
+	uint8_t *bytep = (uint8_t*)filesys;
+
+	bytep = bytep + gnr * s_model.block_size * s_model.blocks_per_group;
+	gd = (struct group_desc*)(bytep + sizeof(s_model));
+
+	bytep = (uint8_t*)filesys;
+	bm = (struct block_bitmap*)(bytep + gd->bg_block_bitmap * 
+			s_model.block_size);
+
+	bm->map[block_offset] = 0;
+
 	return 0;
 }
 
@@ -370,7 +419,7 @@ int zfs_write(uint32_t inodes, char *buf, const uint32_t size)
 	uint32_t i = 0;
 	uint8_t *bytep;
 	struct group_desc *gd;
-	struct zfs_inode zfsi;
+	struct zfs_inode *zfsi;
 	struct inode_table *it;
 	uint8_t *ptr;
 
@@ -388,36 +437,42 @@ int zfs_write(uint32_t inodes, char *buf, const uint32_t size)
 
 	it = (struct inode_table*)bytep;
 
-	zfsi = it->table[inode_offset];
+	zfsi = &(it->table[inode_offset]);
 
 	int j = 0, k = 0;
 
-	if(size <= zfsi.i_size) {
+	if(size <= zfsi->i_size) {
 		for(i = 0; i < size ; i++) {
 			if(i % s_model.block_size == 0) {
-				bytep = filesys + (zfsi.i_block[j++] * s_model.block_size);
+				bytep = filesys + (zfsi->i_block[j++] * s_model.block_size);
 				k = 0;
 			}
 			bytep[k++] = buf[i];
 		}
 	} else {
-		for(; (uint32_t)j < zfsi.i_blocks ;) {
-			ptr = filesys + (zfsi.i_block[j++] * s_model.block_size);
+		for(; (uint32_t)j < zfsi->i_blocks ;) {
+			ptr = filesys + (zfsi->i_block[j++] * s_model.block_size);
 			if(size - i > s_model.block_size) {
 				memcpy(ptr, &buf[i], s_model.block_size);
 				i += s_model.block_size;
 			} else {
 				memcpy(ptr, &buf[i], size - i);
 				i = size;
+
+				zfsi->i_size = size;
+				zfsi->i_blocks = size / s_model.block_size + 1;
 				return size;
 			}
 		}
 	}
 
-	if((uint32_t)j <= zfsi.i_blocks) {
-		while((uint32_t)j != zfsi.i_blocks) {
-			set_b_bitmap(zfsi.i_block[j]);
+	if((uint32_t)j < zfsi->i_blocks) {
+		while((uint32_t)j != zfsi->i_blocks) {
+			set_b_bitmap(zfsi->i_block[j++]);
 		}
+
+		zfsi->i_size = size;
+		zfsi->i_blocks = size / s_model.block_size + 1;
 		return size;
 	}
 
@@ -440,11 +495,16 @@ int zfs_write(uint32_t inodes, char *buf, const uint32_t size)
 					if(size - i > s_model.block_size) {
 						memcpy(ptr, &buf[i], s_model.block_size);
 						i += s_model.block_size;
-						zfsi.i_block[j++] = block_num;
+						zfsi->i_block[j++] = block_num;
 					} else {
+						//printf("%u %d %u\n", zfsi.i_size, i, block_num);
 						memcpy(ptr, &buf[i], size - i);
 						i = size;
-						zfsi.i_block[j++] = block_num;
+						zfsi->i_block[j++] = block_num;
+
+						zfsi->i_size = size;
+						//printf("%u\n", zfsi.i_size);
+						zfsi->i_blocks = size / s_model.block_size + 1;
 						return size;
 					}
 				}
@@ -452,7 +512,8 @@ int zfs_write(uint32_t inodes, char *buf, const uint32_t size)
 		}
 	}
 
-
+	zfsi->i_size = size;
+	zfsi->i_blocks = size / s_model.block_size + 1;
 	return size;
 
 }
