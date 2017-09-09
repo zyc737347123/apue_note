@@ -279,7 +279,7 @@ uint32_t zfs_create(uint8_t type)
 			im = (struct inode_bitmap*)(filesys + 
 					s_model.block_size * gd->bg_inode_bitmap);
 
-			for(; inode_offset < 1024 ; inode_offset++) {
+			for(inode_offset = 0; inode_offset < 1024 ; inode_offset++) {
 				if(im->map[inode_offset] == 0) {
 					im->map[inode_offset] = 1;
 					gd->free_inodes_count--;
@@ -409,6 +409,22 @@ int set_b_bitmap(uint32_t block_num)
 
 int set_i_bitmap(uint32_t inode_num)
 {
+	int gnr = inode_num / s_model.inodes_per_group;
+	int inode_offset = inode_num % s_model.inodes_per_group;
+	
+	struct group_desc *gd;
+	struct inode_bitmap *im;
+	uint8_t *bytep = (uint8_t*)filesys;
+
+	bytep = bytep + gnr * s_model.block_size * s_model.blocks_per_group;
+	gd = (struct group_desc*)(bytep + sizeof(s_model));
+
+	bytep = (uint8_t*)filesys;
+	im = (struct inode_bitmap*)(bytep + gd->bg_inode_bitmap *
+			s_model.block_size);
+
+	im->map[inode_offset] = 0;
+
 	return 0;
 }
 
@@ -516,4 +532,9 @@ int zfs_write(uint32_t inodes, char *buf, const uint32_t size)
 	zfsi->i_blocks = size / s_model.block_size + 1;
 	return size;
 
+}
+
+int zfs_delete(uint32_t inode)
+{
+	return 0;
 }

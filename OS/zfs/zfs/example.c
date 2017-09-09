@@ -203,12 +203,12 @@ int main(void)
 	name_s.base = 0;
 	name_spush("/");
 
-	command_register("ls", ls, NULL);
-	command_register("mkdir", mkdir, NULL);
-	command_register("cd", cd, NULL);
-	command_register("touch", touch, NULL);
-	command_register("echo", echo, NULL);
-	command_register("cat", cat, NULL);
+	command_register("ls", ls, "list current dir");
+	command_register("mkdir", mkdir, "create a empty dir in current dir");
+	command_register("cd", cd, "open a dir");
+	command_register("touch", touch, "create a empty file");
+	command_register("echo", echo, "write some into a file");
+	command_register("cat", cat, "show the content of the file");
 
 	shell_init();
 	shell_run();
