@@ -30,7 +30,7 @@ void map(int fd, const char *data)
 
 	while (1)
 	{
-		char *word = malloc(100); int word_len = 0;
+		char *word = (char*)malloc(100); int word_len = 0;
 		const char *word_end = data;
 
 		/* Get each word... */
@@ -62,7 +62,7 @@ void map(int fd, const char *data)
 
 		if (thru == NULL)
 		{
-			list_t *node = malloc(sizeof(list_t));
+			list_t *node = (list_t*)malloc(sizeof(list_t));
 			node->next = head;
 			node->word = word;
 			node->count = 1;
@@ -111,10 +111,10 @@ int main()
 	char s[1024];
 	int i;
 
-	char **values = malloc(INPUTS_NEEDED * sizeof(char *));
+	char **values = (char**)malloc(INPUTS_NEEDED * sizeof(char *));
 	int values_cur = 0;
 	
-	values[0] = malloc(CHARS_PER_INPUT + 1);
+	values[0] = (char*)malloc(CHARS_PER_INPUT + 1);
 	values[0][0] = '\0';
 
 	while (fgets(s, 1024, file) != NULL)
@@ -124,7 +124,7 @@ int main()
 		else
 		{
 			values_cur++;
-			values[values_cur] = malloc(CHARS_PER_INPUT + 1);
+			values[values_cur] = (char*)malloc(CHARS_PER_INPUT + 1);
 			values[values_cur][0] = '\0';
 			strcat(values[values_cur], s);
 		}

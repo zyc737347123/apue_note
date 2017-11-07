@@ -69,7 +69,7 @@ int main()
 
 	char s[2]; s[1] = '\0';
 	int i;
-	for (i = 0; i < 26; i++)
+/*	for (i = 0; i < 26; i++)
 	{
 		s[0] = (i + 'a');
 
@@ -80,7 +80,7 @@ int main()
 		else
 			printf("%s: %s\n", s, s1);
 	}
-
+*/
 
 	mapreduce_reduce_all(&mr);
 	

@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <poll.h>
+#include <sys/epoll.h>
 
 #include "libmapreduce.h"
 #include "libdictionary.h"
@@ -22,12 +23,20 @@ static const int BUFFER_SIZE = 2048;
 static void process_key_value(const char *key, const char *value, mapreduce_t *mr)
 {
 #ifdef DEBUG	
-	printf("process_key_value\n");
+	//printf("process_key_value\n");
 #endif
 	if(value == NULL) {
 		printf("process_key_value error, value error\n");
 		return;
 	}
+	
+	/*
+	char *key = (char*)malloc(strlen(key_m)*sizeof(char));
+	char *value = (char*)malloc(strlen(value_m)*sizeof(char));
+
+	strncpy(key, key_m, strlen(key_m) + 1);
+	strncpy(value, value_m, strlen(value_m) + 1);
+	*/
 
 	const char *old_value = dictionary_get(&mr->result, key);
 	if(old_value == NULL) {
@@ -42,7 +51,7 @@ static void process_key_value(const char *key, const char *value, mapreduce_t *m
 		dictionary_add(&mr->result, key, new_value);
 	}
 #ifdef DEBUG
-	printf("leave process_key_value\n");
+	//printf("leave process_key_value\n");
 #endif
 }
 
@@ -91,6 +100,9 @@ static int read_from_fd(int fd, char *buffer, mapreduce_t *mr)
 		/* Shift the contents of the buffer to remove the space used by the processed line. */
 		memmove(buffer, line + 1, BUFFER_SIZE - ((line + 1) - buffer));
 		buffer[BUFFER_SIZE - ((line + 1) - buffer)] = '\0';
+
+		//free(key);
+		//free(value);
 	}
 
 	return 1;
@@ -120,45 +132,77 @@ void *reduce_worker(void *worker)
 #endif
 
 	worker_t *w = (worker_t*)worker;
-	int map_num = w->map_num, i = 0, poll_res = 0, read_res = 0;
+	int map_num = w->map_num, i = 0, epoll_res = 0, read_res = 0, epollfd;
+	struct epoll_event ev, *events;
+	int all_close = 0, check = 0;
+	char **buffers = NULL;
+
 	pipefd_t *fds = w->fds;
 	mapreduce_t *mr = w->mr;
-	char **buffers = (char**)malloc(map_num * sizeof(char*)); // for reduce
-	int all_close = 0;
-
+	
+	events = (struct epoll_event*)malloc(map_num * sizeof(struct epoll_event));
+	buffers = (char**)malloc(map_num * sizeof(char*)); // for reduce
 	for(i = 0 ; i < map_num ; i++){
 		buffers[i] = (char*)malloc(BUFFER_SIZE + 1);
 	}
 
-	struct pollfd *pollfds = (struct pollfd*)malloc(map_num * sizeof(struct pollfd));
-	for(i = 0 ; i < map_num ; i++){
-		pollfds[i].fd = fds[i].fd[0]; // read fd
-		pollfds[i].events = POLLIN;
+	epollfd = epoll_create(1);
+	if(epollfd < 0){
+		printf("epoll_create error\n");
+		return (void*)0;
 	}
 
-	// process map output 
-	while((poll_res = poll(pollfds, map_num, -1)) > 0){
-		for(i = 0 ; i < map_num ; i++){
-			if(poll_res == 0)
-				break;
-			if(pollfds[i].revents & POLLIN){
-				read_res = read_from_fd(pollfds[i].fd, buffers[i], mr);
-				poll_res--;
-			}
-			if(pollfds[i].revents & POLLHUP)
-				all_close++;
-		}
+	for(i = 0 ; i < map_num ; i++){
+		ev.data.fd = fds[i].fd[0]; // read fd
+		ev.events = EPOLLIN | EPOLLET;
+		epoll_ctl(epollfd, EPOLL_CTL_ADD, fds[i].fd[0], &ev);
+	}
 
+	while(1){
+		epoll_res = epoll_wait(epollfd, events, map_num, -1);
+		for(i = 0 ; i < epoll_res ; i++){
+			if(events[i].events & EPOLLIN){
+				for(;;){
+					// sure will read full data for ET model
+					read_res = read_from_fd(events[i].data.fd, buffers[i], mr);
+					if(read_res <= 0)
+						break;
+				}
+			}
+			if(events[i].events & EPOLLHUP){
+				all_close++;
+				epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &events[i]);
+			}
+		}
 		if(all_close == map_num)
 			break;
-		else
-			all_close = 0;
 	}
+	
+	for(i = 0 ; i < map_num ; i++)
+		close(fds[i].fd[0]);
+	close(epollfd);
 
-	pthread_barrier_wait(&mr->mr_barrier);
+	check = pthread_barrier_wait(&mr->mr_barrier);
+#ifdef DEBUG
+	if(check == 0 || check == PTHREAD_BARRIER_SERIAL_THREAD)
+		printf("barrier sucess\n");
+	else
+		printf("barrier error\n");
+#endif
+	
+	// clean
+	/*
+	for(i = 0 ; i < map_num ; i++)
+		free(buffers[i]);
+	free(buffers);
+	*/
+	free(events);
+	free(w->fds);
+	free(w);
+	
 #ifdef DEBUG
 	printf("leave reduce_worker\n");
-#endif 
+#endif
 
 	return (void*)0;
 }
@@ -184,7 +228,7 @@ void mapreduce_map_all(mapreduce_t *mr, const char **values)
 	for(i = 0 ; i < map_num ; i++){
 		res = pipe(fds[i].fd);
 		if(res == -1){
-			printf("pipe error\n");
+			perror("pipe");
 			return;
 		}
 	}
@@ -198,10 +242,11 @@ void mapreduce_map_all(mapreduce_t *mr, const char **values)
 		}else if(pid > 0){
 			close(fds[i].fd[0]); // child close read fd
 			mr->mr_map(fds[i].fd[1], values[i]);
+			mapreduce_destroy(mr);
 #ifdef DEBUG
 			printf("map(%d) pid: %d\n", i, pid);
 #endif
-			exit(0);
+		exit(0);
 		}
 	}
 
@@ -241,7 +286,7 @@ const char *mapreduce_get_value(mapreduce_t *mr, const char *result_key)
 
 void mapreduce_destroy(mapreduce_t *mr)
 {
-	dictionary_destroy(&mr->result);
+	dictionary_destroy_free(&mr->result);
 	pthread_mutex_destroy(&mr->mr_lock);
 	pthread_barrier_destroy(&mr->mr_barrier);
 }
