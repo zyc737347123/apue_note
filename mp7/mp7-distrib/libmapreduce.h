@@ -18,6 +18,8 @@ typedef struct _mapreduce_t
 	dictionary_t result;
 	pthread_mutex_t mr_lock;
 	pthread_barrier_t mr_barrier;
+	int map_num;
+	char **buffers;
 } mapreduce_t;
 
 typedef struct _pipefd_t
