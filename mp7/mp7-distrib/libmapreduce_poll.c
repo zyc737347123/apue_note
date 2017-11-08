@@ -16,7 +16,7 @@
 #include "libmapreduce.h"
 #include "libdictionary.h"
 
-static const int BUFFER_SIZE = 2048;
+static const int BUFFER_SIZE = 1024 * 1024;
 
 
 static void process_key_value(const char *key, const char *value, mapreduce_t *mr)

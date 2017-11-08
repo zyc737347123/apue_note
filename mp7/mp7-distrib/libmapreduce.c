@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <poll.h>
+#include <fcntl.h>
 #include <sys/epoll.h>
 
 #include "libmapreduce.h"
@@ -25,22 +26,15 @@ static void process_key_value(const char *key, const char *value, mapreduce_t *m
 #ifdef DEBUG	
 	//printf("process_key_value\n");
 #endif
+
 	if(value == NULL) {
 		printf("process_key_value error, value error\n");
 		return;
 	}
 	
-	/*	
-	char *key = (char*)malloc((strlen(key_m) + 1) * sizeof(char));
-	char *value = (char*)malloc((strlen(value_m)+ 1) * sizeof(char));
-
-	memcpy(key, key_m, strlen(key_m) + 1);
-	memcpy(value, value_m, strlen(value_m) + 1);
-	*/
-
 	const char *old_value = dictionary_get(&mr->result, key);
 	if(old_value == NULL) {
-	
+		
 		dictionary_add(&mr->result, key, value);
 		// if multi thread , need check dictionary_add return value;
 	
@@ -54,6 +48,7 @@ static void process_key_value(const char *key, const char *value, mapreduce_t *m
 		dictionary_add(&mr->result, key, new_value);
 		
 	}
+
 #ifdef DEBUG
 	//printf("leave process_key_value\n");
 #endif
@@ -104,9 +99,6 @@ static int read_from_fd(int fd, char *buffer, mapreduce_t *mr)
 		/* Shift the contents of the buffer to remove the space used by the processed line. */
 		memmove(buffer, line + 1, BUFFER_SIZE - ((line + 1) - buffer));
 		buffer[BUFFER_SIZE - ((line + 1) - buffer)] = '\0';
-
-		//free(key);
-		//free(value);
 	}
 
 	return 1;
@@ -148,7 +140,6 @@ void *reduce_worker(void *worker)
 	buffers = w->mr->buffers;
 	
 	events = (struct epoll_event*)malloc(map_num * sizeof(struct epoll_event));
-	
 
 	epollfd = epoll_create(1);
 	if(epollfd < 0){
@@ -167,15 +158,17 @@ void *reduce_worker(void *worker)
 		for(i = 0 ; i < epoll_res ; i++){
 			if(events[i].events & EPOLLIN){
 				for(;;){
-					// sure will read full data for ET model
+					// sure read full data for ET model
 					read_res = read_from_fd(events[i].data.fd, buffers[i], mr);
 					if(read_res <= 0)
 						break;
 				}
+				printf("IN(%d)\n", events[i].data.fd);
 			}
 			if(events[i].events & EPOLLHUP){
 				all_close++;
 				epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &events[i]);
+				printf("HUP(%d)\n", events[i].data.fd);
 			}
 		}
 		if(all_close == map_num)
@@ -186,6 +179,11 @@ void *reduce_worker(void *worker)
 		close(fds[i].fd[0]);
 	close(epollfd);
 	
+	// clean
+	free(events);
+	free(w->fds);
+	free(w);
+
 	check = pthread_barrier_wait(&mr->mr_barrier);
 #ifdef DEBUG
 	if(check == 0 || check == PTHREAD_BARRIER_SERIAL_THREAD)
@@ -194,11 +192,6 @@ void *reduce_worker(void *worker)
 		printf("barrier error\n");
 #endif
 	
-	// clean
-	free(events);
-	free(w->fds);
-	free(w);
-
 #ifdef DEBUG
 	printf("leave reduce_worker\n");
 #endif
@@ -212,17 +205,20 @@ void mapreduce_map_all(mapreduce_t *mr, const char **values)
 #ifdef DEBUG
 	printf("mapreduce_map_all\n");
 #endif
+
 	int map_num = 0, i = 0, res = 0;
 	pid_t pid;
 	pthread_t tid;
 	char ***buffers = &mr->buffers;
-
+	
+	// count map num
 	while(values[i] != NULL){
 		map_num++;
 		i++;
 	}
 	mr->map_num = map_num;
 
+	// alloc memory
 	pipefd_t *fds = (pipefd_t*)malloc(map_num * sizeof(pipefd_t));
 	worker_t *worker = (worker_t*)malloc(sizeof(worker_t));
 	*buffers = (char**)malloc(map_num * sizeof(char*)); // for reduce
@@ -230,17 +226,19 @@ void mapreduce_map_all(mapreduce_t *mr, const char **values)
 		(*buffers)[i] = (char*)malloc(BUFFER_SIZE + 1);
 	}
 
+	// create pipe with non_block for epoll ET model 
 	for(i = 0 ; i < map_num ; i++){
-		res = pipe(fds[i].fd);
+		res = pipe2(fds[i].fd, O_NONBLOCK);
 		if(res == -1){
 			perror("pipe");
 			return;
 		}
 	}
 	
+	// create new process for map
 	for(i = 0 ; i < map_num ; i++){
 		pid = fork();
-		// if pid = --1, error
+		// if pid =i= --1, error
 		if(pid == 0){
 			close(fds[i].fd[1]); // father close write fd
 			continue;
@@ -255,7 +253,7 @@ void mapreduce_map_all(mapreduce_t *mr, const char **values)
 		}
 	}
 
-	// start reduce work
+	// start reduce work, init worker_t
 	worker->map_num = map_num;
 	worker->fds = fds;
 	worker->mr = mr;
