@@ -46,7 +46,7 @@ static void process_key_value(const char *key, const char *value, mapreduce_t *m
 			return;
 		}
 		dictionary_add(&mr->result, key, new_value);
-		
+		free((char*)value);	
 	}
 
 #ifdef DEBUG

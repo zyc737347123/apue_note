@@ -46,7 +46,7 @@ static void process_key_value(const char *key, const char *value, mapreduce_t *m
 			return;
 		}
 		dictionary_add(&mr->result, key, new_value);
-		
+		free((char*)value);	
 	}
 
 #ifdef DEBUG
@@ -163,12 +163,10 @@ void *reduce_worker(void *worker)
 					if(read_res <= 0)
 						break;
 				}
-				printf("IN(%d)\n", events[i].data.fd);
 			}
 			if(events[i].events & EPOLLHUP){
 				all_close++;
 				epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &events[i]);
-				printf("HUP(%d)\n", events[i].data.fd);
 			}
 		}
 		if(all_close == map_num)
@@ -196,7 +194,8 @@ void *reduce_worker(void *worker)
 	printf("leave reduce_worker\n");
 #endif
 
-	return (void*)0;
+	//return (void*)0;
+	pthread_exit((void*)0);
 }
 
 

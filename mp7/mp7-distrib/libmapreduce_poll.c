@@ -113,6 +113,16 @@ void mapreduce_init(mapreduce_t *mr,
 	pthread_barrier_init(&mr->mr_barrier, NULL, 2);
 }
 
+void cleanup(void *arg)
+{
+	buffers_t *clean = (buffers_t*)arg;
+	int i = 0;
+	for(i = 0 ; i < clean->num ; i++)
+		free(clean->buffers[i]);
+	free(clean->buffers);
+	free(clean);
+}
+
 void *reduce_worker(void *worker)
 {
 #ifdef DEBUG
@@ -121,16 +131,28 @@ void *reduce_worker(void *worker)
 
 	worker_t *w = (worker_t*)worker;
 	int map_num = w->map_num, i = 0, poll_res = 0, read_res = 0;
+	int all_close = 0;
+	char **buffers = NULL;
+	struct pollfd *pollfds = NULL;
+	buffers_t *clean = NULL;
+	
 	pipefd_t *fds = w->fds;
 	mapreduce_t *mr = w->mr;
-	char **buffers = (char**)malloc(map_num * sizeof(char*)); // for reduce
-	int all_close = 0;
 
+	buffers = (char**)malloc(map_num * sizeof(char*)); // for reduce
 	for(i = 0 ; i < map_num ; i++){
 		buffers[i] = (char*)malloc(BUFFER_SIZE + 1);
 	}
 
-	struct pollfd *pollfds = (struct pollfd*)malloc(map_num * sizeof(struct pollfd));
+	// set pthread cleanup 
+	clean = (buffers_t*)malloc(sizeof(buffers_t));
+	clean->num = map_num;
+	clean->buffers = buffers;
+
+	pthread_cleanup_push(cleanup, (void*)clean);
+	
+	// init poll fd set
+	pollfds = (struct pollfd*)malloc(map_num * sizeof(struct pollfd));
 	for(i = 0 ; i < map_num ; i++){
 		pollfds[i].fd = fds[i].fd[0]; // read fd
 		pollfds[i].events = POLLIN;
@@ -164,14 +186,8 @@ void *reduce_worker(void *worker)
 		close(fds[i].fd[0]);
 
 	pthread_barrier_wait(&mr->mr_barrier);
-
+	
 	// clean
-	/*
-	for(i = 0 ; i < map_num ; i++){
-		free(buffers[i]);
-	}
-	free(buffers);
-	*/
 	free(w->fds);
 	free(w);
 	
@@ -179,7 +195,9 @@ void *reduce_worker(void *worker)
 	printf("leave reduce_worker\n");
 #endif 
 
-	return (void*)0;
+	pthread_exit((void*)0);
+
+	pthread_cleanup_pop(1);
 }
 
 
@@ -199,7 +217,8 @@ void mapreduce_map_all(mapreduce_t *mr, const char **values)
 
 	pipefd_t *fds = (pipefd_t*)malloc(map_num * sizeof(pipefd_t));
 	worker_t *worker = (worker_t*)malloc(sizeof(worker_t));
-	
+
+	// open pipe
 	for(i = 0 ; i < map_num ; i++){
 		res = pipe(fds[i].fd);
 		if(res == -1){

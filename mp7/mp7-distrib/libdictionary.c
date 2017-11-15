@@ -19,7 +19,7 @@ static int compare(const void *a, const void *b)
 
 static dictionary_entry_t *malloc_entry_t(const char *key, const char *value)
 {
-	dictionary_entry_t *entry = malloc(sizeof(dictionary_entry_t));
+	dictionary_entry_t *entry = (dictionary_entry_t*)malloc(sizeof(dictionary_entry_t));
 	entry->key = key;
 	entry->value = value;
 

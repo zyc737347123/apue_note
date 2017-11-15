@@ -34,6 +34,12 @@ typedef struct _worker_t
 	pipefd_t *fds;
 } worker_t;
 
+typedef struct _buffers_t
+{
+	int num;
+	char **buffers;
+} buffers_t;
+
 /**
  * This function will be the first call made to the libmapreduce library. 
  * You should put any initialization logic here
