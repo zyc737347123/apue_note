@@ -42,13 +42,13 @@ int main()
 {
 	mapreduce_t mr;
 	char *values[2];
-	int i = 300;
+	int i = 10;
 	values[0] = "Some text";
 	values[1] = NULL;
 	
 	while(i--){
 		//sleep(1);
-		int j = 100000000, k;
+		int j = 1000, k;
 		for(k = 0 ; k < j ; k++)
 			k++;
 

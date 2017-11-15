@@ -221,6 +221,7 @@ void mapreduce_map_all(mapreduce_t *mr, const char **values)
 	pipefd_t *fds = (pipefd_t*)malloc(map_num * sizeof(pipefd_t));
 	worker_t *worker = (worker_t*)malloc(sizeof(worker_t));
 	*buffers = (char**)malloc(map_num * sizeof(char*)); // for reduce
+	
 	for(i = 0 ; i < map_num ; i++){
 		(*buffers)[i] = (char*)malloc(BUFFER_SIZE + 1);
 	}
@@ -245,6 +246,8 @@ void mapreduce_map_all(mapreduce_t *mr, const char **values)
 			close(fds[i].fd[0]); // child close read fd
 			mr->mr_map(fds[i].fd[1], values[i]);
 			mapreduce_destroy(mr);
+			free(worker);
+			free(fds);
 #ifdef DEBUG
 			printf("map(%d) pid: %d\n", i, pid);
 #endif
